@@ -1,0 +1,74 @@
+# Bytecode and Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+.build/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# PyInstaller
+*.spec
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test outputs
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/
+.nox/
+
+# Coverage reports
+coverage.xml
+*.cover
+*.lcov
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pydantic compiled models
+*.pydantic/
+
+# Benchmark outputs (optional)
+results/
+benchmark_outputs/
+
+# Local dev tools
+*.sqlite3
+.env
+.env.*
+
+# Optional: CLI command cache / autocomplete
+__lakebench_cli_cache__/
+
+# Optional: Docs builds
+site/
+docs/_build/
