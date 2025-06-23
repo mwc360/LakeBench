@@ -1,16 +1,16 @@
-from ....engines.polars import PolarsEngine
-from ....engines.delta_rs import DeltaRsEngine
+from ....engines.polars import Polars
+from ....engines.delta_rs import DeltaRs
 
 from IPython.core.getipython import get_ipython
 notebookutils = get_ipython().user_ns.get("notebookutils")
 
 
 class PolarsAtomicELT:
-    def __init__(self, storage_paths, engine: PolarsEngine):
+    def __init__(self, storage_paths, engine: Polars):
 
         import numpy as np
         self.np = np
-        self.delta_rs = DeltaRsEngine()
+        self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
 

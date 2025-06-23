@@ -1,6 +1,6 @@
 from .base import BaseEngine
 
-class DuckDBEngine(BaseEngine):
+class DuckDB(BaseEngine):
     """
     DuckDB Engine for ELT Benchmarks.
     """

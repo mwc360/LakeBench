@@ -7,10 +7,10 @@ from .engines.daft import DaftAtomicELT
 from .engines.polars import PolarsAtomicELT
 
 from ...engines.base import BaseEngine
-from ...engines.spark import SparkEngine
-from ...engines.duckdb import DuckDBEngine
-from ...engines.daft import DaftEngine
-from ...engines.polars import PolarsEngine
+from ...engines.spark import Spark
+from ...engines.duckdb import DuckDB
+from ...engines.daft import Daft
+from ...engines.polars import Polars
 
 
 class AtomicELT(BaseBenchmark):
@@ -20,10 +20,10 @@ class AtomicELT(BaseBenchmark):
     """
 
     BENCHMARK_IMPL_REGISTRY = {
-        SparkEngine: SparkAtomicELT,
-        DuckDBEngine: DuckDBAtomicELT,
-        DaftEngine: DaftAtomicELT,
-        PolarsEngine: PolarsAtomicELT
+        Spark: SparkAtomicELT,
+        DuckDB: DuckDBAtomicELT,
+        Daft: DaftAtomicELT,
+        Polars: PolarsAtomicELT
     }
 
     def __init__(

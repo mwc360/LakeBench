@@ -1,6 +1,6 @@
 from .base import BaseEngine
 
-class DeltaRsEngine(BaseEngine):
+class DeltaRs(BaseEngine):
     """
     Delta-Rs Engine for ELT Benchmarks.
     """

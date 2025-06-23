@@ -3,7 +3,7 @@ from .base import BaseEngine
 from IPython.core.getipython import get_ipython
 notebookutils = get_ipython().user_ns.get("notebookutils")
 
-class DaftEngine(BaseEngine):
+class Daft(BaseEngine):
     """
     Daft Engine for ELT Benchmarks.
     """

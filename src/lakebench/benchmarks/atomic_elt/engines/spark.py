@@ -1,7 +1,7 @@
-from ....engines.spark import SparkEngine
+from ....engines.spark import Spark
 
 class SparkAtomicELT:
-    def __init__(self, storage_paths, engine: SparkEngine):
+    def __init__(self, storage_paths, engine: Spark):
         
         self.engine = engine
         self.engine.create_schema_if_not_exists(drop_before_create=True)

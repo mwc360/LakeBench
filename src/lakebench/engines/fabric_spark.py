@@ -1,4 +1,4 @@
-from .spark import SparkEngine
+from .spark import Spark
 
 try:
     from IPython.core.getipython import get_ipython
@@ -6,7 +6,7 @@ try:
 except Exception as e:
     e
 
-class FabricSparkEngine(SparkEngine):
+class FabricSpark(Spark):
     """
     Spark Engine for ELT Benchmarks.
     """

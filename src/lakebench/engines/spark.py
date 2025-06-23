@@ -1,6 +1,6 @@
 from .base import BaseEngine
 
-class SparkEngine(BaseEngine):
+class Spark(BaseEngine):
     """
     Spark Engine for ELT Benchmarks.
     """

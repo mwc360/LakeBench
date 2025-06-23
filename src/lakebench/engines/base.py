@@ -17,9 +17,9 @@ class BaseEngine(ABC):
         Append an array to a Delta table.
         """
         import pyarrow as pa
-        from ..engines.delta_rs import DeltaRsEngine
+        from ..engines.delta_rs import DeltaRs
         results_table = pa.Table.from_pylist(array)
-        DeltaRsEngine().write_deltalake(
+        DeltaRs().write_deltalake(
             abfss_path, 
             results_table, 
             mode="append",

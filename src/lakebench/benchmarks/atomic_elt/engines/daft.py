@@ -1,11 +1,11 @@
-from ....engines.daft import DaftEngine
-from ....engines.delta_rs import DeltaRsEngine
+from ....engines.daft import Daft
+from ....engines.delta_rs import DeltaRs
 
 class DaftAtomicELT:
-    def __init__(self, storage_paths, engine : DaftEngine):
+    def __init__(self, storage_paths, engine : Daft):
         self.engine = engine
 
-        self.delta_rs = DeltaRsEngine()
+        self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
 

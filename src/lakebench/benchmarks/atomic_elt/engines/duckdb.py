@@ -1,11 +1,11 @@
-from ....engines.duckdb import DuckDBEngine
-from ....engines.delta_rs import DeltaRsEngine
+from ....engines.duckdb import DuckDB
+from ....engines.delta_rs import DeltaRs
 
 class DuckDBAtomicELT:
-    def __init__(self, storage_paths, engine : DuckDBEngine):
+    def __init__(self, storage_paths, engine : DuckDB):
         self.engine = engine
 
-        self.delta_rs = DeltaRsEngine()
+        self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
 

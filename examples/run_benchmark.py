@@ -6,9 +6,9 @@ name = "BenchLake"
 
 
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.engines.fabric_spark import FabricSparkEngine
+from lakebench.engines.fabric_spark import FabricSpark
 
-engine = FabricSparkEngine(
+engine = FabricSpark(
     lakehouse_workspace_name = 'mcole_scenario_repl', 
     lakehouse_name = 'mcole_benchmarks', 
     lakehouse_schema_name = 'spark_atomic_elt_100_8core',
@@ -27,9 +27,9 @@ benchmark.run(mode="light")
 
 ###################
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.benchmarks.atomic_elt.engines.polars import PolarsEngine
+from lakebench.benchmarks.atomic_elt.engines.polars import Polars
 
-engine = PolarsEngine( 
+engine = Polars( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
 )
 
@@ -45,9 +45,9 @@ benchmark.run(mode="light")
 
 ###################
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.benchmarks.atomic_elt.engines.duckdb import DuckDBEngine
+from lakebench.benchmarks.atomic_elt.engines.duckdb import DuckDB
 
-engine = DuckDBEngine( 
+engine = DuckDB( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
 )
 
@@ -64,9 +64,9 @@ benchmark.run(mode="light")
 
 ###################
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.benchmarks.atomic_elt.engines.daft import DaftEngine
+from lakebench.benchmarks.atomic_elt.engines.daft import Daft
 
-engine = DaftEngine( 
+engine = Daft( 
     delta_abfss_schema_path = 'abfss://............./Tables/polars_atomic_elt_100_8core',
     delta_mount_schema_path = '/lakehouse/default/Tables/polars_atomic_elt_100_8core'
 )

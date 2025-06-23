@@ -1,6 +1,6 @@
 from .base import BaseEngine
 
-class PolarsEngine(BaseEngine):
+class Polars(BaseEngine):
     """
     Polars Engine for ELT Benchmarks.
     """

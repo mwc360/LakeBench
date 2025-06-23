@@ -37,7 +37,7 @@ More advanced benchmarks (e.g. [TPC-DS](https://www.tpc.org/tpcds/) + [TPC-H](ht
 
 LakeBench supports multiple lakehouse compute engines. Each benchmark declares its own supported engines.
 
-- ✅ Apache Spark (Fabric, Databricks, OSS)
+- ✅ Apache Spark (Fabric)
 - ✅ DuckDB
 - ✅ Polars
 - ✅ Daft
@@ -60,9 +60,9 @@ _Note: in this initial beta version, all engines have only been tested inside Mi
 ### Fabric Spark
 ```python
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.engines.fabric_spark import FabricSparkEngine
+from lakebench.engines.fabric_spark import FabricSpark
 
-engine = FabricSparkEngine(
+engine = FabricSpark(
     lakehouse_workspace_name="workspace",
     lakehouse_name="lakehouse",
     lakehouse_schema_name="schema"
@@ -83,9 +83,9 @@ benchmark.run()
 ### Polars
 ```python
 from lakebench.benchmarks.atomic_elt.atomic_elt import AtomicELT
-from lakebench.benchmarks.atomic_elt.engines.polars import PolarsEngine
+from lakebench.benchmarks.atomic_elt.engines.polars import Polars
 
-engine = PolarsEngine( 
+engine = Polars( 
     delta_abfss_schema_path = 'abfss://...'
 )
 
@@ -100,6 +100,28 @@ benchmark = AtomicELT(
 
 benchmark.run()
 ```
+
+## 🔌 Extensibility by Design
+
+LakeBench is built to be **plug-and-play** for both benchmark types and compute engines:
+
+- You can register **new engines** without modifying core benchmark logic.
+- You can add **new benchmarks** that reuse existing engines and shared engine methods.
+- LakeBench extension libraries can be created to extend core LakeBench capabilities with additional custom benchmarks and engines (i.e. `MyCustomSynapseSpark(Spark)`, `MyOrgsELT(BaseBenchmark)`).
+
+This architecture encourages experimentation, benchmarking innovation, and easy adaptation to your needs.
+
+_Example:_
+```python
+# Automatically maps benchmark implementation to your custom engine class
+from lakebench.engines.spark import Spark
+
+class MyCustomSynapseSpark(Spark):
+    ...
+
+benchmark = AtomicELT(engine=MyCustomSynapseSpark(...))
+```
+All you need to do is subclass the relevant base class and it will auto-register provided that the referenced benchmark supports the base class. No changes to the framework internals required.
 
 # 🔍 Philosophy
 LakeBench is designed to host a suite of benchmarks that cover E2E data engineering and consumption workloads:
