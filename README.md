@@ -135,3 +135,12 @@ The core aim is provide transparency into engine efficiency, performance, and co
 
 # 📬 Feedback / Contributions
 Got ideas? Found a bug? Want to contribute a benchmark or engine wrapper? PRs and issues are welcome!
+
+
+# Acknowledgement of Other _LakeBench_ Projects
+The **LakeBench** name is also used by two unrelated academic and research efforts:
+- **[RLGen/LAKEBENCH](https://github.com/RLGen/LAKEBENCH)**: A benchmark designed for evaluating vision-language models on multimodal tasks.
+- **LakeBench: Benchmarks for Data Discovery over Lakes** ([paper link](https://www.catalyzex.com/paper/lakebench-benchmarks-for-data-discovery-over)):
+    A benchmark suite focused on improving data discovery and exploration over large data lakes.
+
+While these projects target very different problem domains — such as machine learning and data discovery — they coincidentally share the same name. This project, focused on ELT benchmarking across lakehouse engines, is not affiliated with or derived from either.
