@@ -19,6 +19,11 @@ all = ["duckdb==1.3.1", "polars==1.30.0", "getdaft==0.4.18"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+# Include SQL files src directory
+"" = ["*.sql"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
