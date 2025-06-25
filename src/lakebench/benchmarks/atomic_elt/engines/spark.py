@@ -1,16 +1,10 @@
 from ....engines.spark import Spark
 
 class SparkAtomicELT:
-    def __init__(self, storage_paths, engine: Spark):
+    def __init__(self, engine: Spark):
         
         self.engine = engine
         self.engine.create_schema_if_not_exists(drop_before_create=True)
-        self.source_data_abfss_path = storage_paths['source_data_abfss_path']
-
-
-    def load_parquet_to_delta(self, table_name: str):
-        df = self.engine.spark.read.parquet(f"{self.source_data_abfss_path}/{table_name}/")
-        df.write.saveAsTable(table_name)
 
     def create_total_sales_fact(self):
         self.engine.spark.sql("""

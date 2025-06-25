@@ -2,24 +2,12 @@ from ....engines.duckdb import DuckDB
 from ....engines.delta_rs import DeltaRs
 
 class DuckDBAtomicELT:
-    def __init__(self, storage_paths, engine : DuckDB):
+    def __init__(self, engine : DuckDB):
         self.engine = engine
 
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
-
-        self.storage_paths = storage_paths
-        self.source_data_abfss_path = storage_paths['source_data_abfss_path']
-
-    def load_parquet_to_delta(self, table_name: str):
-        arrow_df = self.engine.duckdb.sql(f""" FROM parquet_scan('{self.source_data_abfss_path}/{table_name}/*.parquet') """).record_batch()
-        self.write_deltalake(
-            f"{self.engine.delta_abfss_schema_path}/{table_name}",
-            arrow_df,
-            mode="overwrite",
-            engine='pyarrow'
-        ) 
 
     def create_total_sales_fact(self):
         self.engine.duckdb.sql("use main")

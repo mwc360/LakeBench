@@ -79,18 +79,17 @@ class TPCDS(BaseBenchmark):
                 f"in benchmark '{self.__class__.__name__}'."
             )
         
-        self.storage_paths = {
-            "source_data_mount_path": parquet_mount_path,
-            "source_data_abfss_path": parquet_abfss_path,
-        }
+        if isinstance(engine, Daft):
+            if parquet_mount_path is None:
+                raise ValueError("parquet_mount_path must be provided for Daft engine.")
+        self.source_data_path = parquet_mount_path or parquet_abfss_path
         self.engine = engine
         self.scenario_name = scenario_name
         self.benchmark_impl = self.benchmark_impl_class(
-            self.storage_paths,
             self.engine
         )
 
-    def run(self, mode: str = 'light'):
+    def run(self, mode: str = 'power_test'):
         match mode:
             case 'load':
                 self._run_load_test()
@@ -109,10 +108,16 @@ class TPCDS(BaseBenchmark):
         with self.timer('Loading TPCDS Tables', self.benchmark_impl):
             for table_name in self.TABLE_REGISTRY:
                 # TBD: Add test_item logging
-                self.benchmark_impl.load_parquet_to_delta(f"{self.storage_paths['source_data_abfss_path']}/{table_name}", table_name) #TBD
+                self.engine.load_parquet_to_delta(
+                    parquet_folder_path=f"{self.source_data_path}/{table_name}", 
+                    table_name=table_name
+                )
 
     def _run_query_test(self):
         with self.timer('Loading TPCDS Tables', self.benchmark_impl):
+            if isinstance(self.engine, (DuckDB, Daft, Polars)):
+                for table_name in self.TABLE_REGISTRY:
+                    self.engine.register_table(table_name)
             for query_name in self.query_list:
                 with importlib.resources.path('lakebench.benchmarks.tpcds.resources.queries', f'{query_name}.sql') as query_path:
                     with open(query_path, 'r') as query_file:
@@ -122,8 +127,8 @@ class TPCDS(BaseBenchmark):
                     query=query, 
                     from_dialect='spark', 
                     to_dialect=self.engine.sqlglot_dialect, 
-                    catalog=self.engine.catalog_reference,
-                    schema=self.engine.schema_reference
+                    catalog=self.engine.catalog_name,
+                    schema=self.engine.schema_name
                     )
                 #  TBD: Add test_item logging
                 execute_query = self.engine.execute_sql_query(prepped_query) #TBD

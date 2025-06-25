@@ -6,27 +6,17 @@ notebookutils = get_ipython().user_ns.get("notebookutils")
 
 
 class PolarsAtomicELT:
-    def __init__(self, storage_paths, engine: Polars):
+    def __init__(self, engine: Polars):
 
         import numpy as np
         self.np = np
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
-
-        self.storage_paths = storage_paths
-        self.source_data_abfss_path = storage_paths['source_data_abfss_path']
-
         self.storage_options={
             "bearer_token": notebookutils.credentials.getToken('storage')
         }
         self.engine = engine
-
-    def load_parquet_to_delta(self, table_name: str):
-        table_df = self.engine.pl.scan_parquet(
-            f"{self.source_data_abfss_path}/{table_name}/*.parquet", storage_options=self.storage_options
-        )
-        table_df.collect(engine='streaming').write_delta(f"{self.engine.delta_abfss_schema_path}/{table_name}", mode="overwrite", storage_options=self.storage_options)
 
     def create_total_sales_fact(self):
         fact_table_df = (

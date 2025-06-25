@@ -2,26 +2,12 @@ from ....engines.daft import Daft
 from ....engines.delta_rs import DeltaRs
 
 class DaftAtomicELT:
-    def __init__(self, storage_paths, engine : Daft):
+    def __init__(self, engine : Daft):
         self.engine = engine
 
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
-
-        self.storage_paths = storage_paths
-        self.source_data_mount_path = storage_paths['source_data_mount_path']
-        if self.source_data_mount_path is None:
-            raise ValueError("`tpcds_parquet_mount_path` path is required.")
-
-    def load_parquet_to_delta(self, table_name: str):
-        table_df = self.engine.daft.read_parquet(
-            f"{self.source_data_mount_path}/{table_name}/*.parquet"
-        )
-        table_df.write_deltalake(
-            f"{self.engine.delta_abfss_schema_path}/{table_name}",
-            mode="overwrite"
-        ) 
 
     def create_total_sales_fact(self):
         fact_table_df = (

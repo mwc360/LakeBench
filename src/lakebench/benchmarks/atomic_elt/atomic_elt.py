@@ -57,14 +57,13 @@ class AtomicELT(BaseBenchmark):
                 f"in benchmark '{self.__class__.__name__}'."
             )
         
-        self.storage_paths = {
-            "source_data_mount_path": tpcds_parquet_mount_path,
-            "source_data_abfss_path": tpcds_parquet_abfss_path,
-        }
+        if isinstance(engine, Daft):
+            if tpcds_parquet_mount_path is None:
+                raise ValueError("parquet_mount_path must be provided for Daft engine.")
+        self.source_data_path = tpcds_parquet_mount_path or tpcds_parquet_abfss_path
         self.engine = engine
         self.scenario_name = scenario_name
         self.benchmark_impl = self.benchmark_impl_class(
-            self.storage_paths,
             self.engine
         )
 
@@ -84,7 +83,10 @@ class AtomicELT(BaseBenchmark):
     def run_light_mode(self):
         with self.timer('Read parquet, write delta (x5)', self.benchmark_impl):
             for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
-                self.benchmark_impl.load_parquet_to_delta(table_name)
+                self.engine.load_parquet_to_delta(
+                    parquet_folder_path=f"{self.source_data_path}/{table_name}", 
+                    table_name=table_name
+                )
 
         with self.timer('Create fact table', self.benchmark_impl):
             self.benchmark_impl.create_total_sales_fact()

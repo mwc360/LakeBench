@@ -49,8 +49,8 @@ class Spark(BaseEngine):
         cores = (self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size()) * int(self.spark.conf.get('spark.executor.cores'))
         return cores
     
-    def load_parquet_to_delta(self, parquet_abfss_folder_path: str, table_name: str):
-        df = self.spark.read.parquet(f"{parquet_abfss_folder_path}")
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
+        df = self.spark.read.parquet(f"{parquet_folder_path}")
         df.write.mode("append").saveAsTable(table_name)
     
     def execute_sql_query(self, query: str):

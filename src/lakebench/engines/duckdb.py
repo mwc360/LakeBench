@@ -1,5 +1,6 @@
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
+from ..utils.query_utils import replace_catalog_table_references
 
 class DuckDB(BaseEngine):
     """
@@ -18,15 +19,29 @@ class DuckDB(BaseEngine):
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.sqlglot_dialect = "duckdb"
         self.deltars = DeltaRs()
+        self.catalog_name = None
+        self.schema_name = None
 
-    def load_parquet_to_delta(self, parquet_abfss_folder_path: str, table_name: str):
-        arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{parquet_abfss_folder_path}/*.parquet') """).record_batch()
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
+        arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{parquet_folder_path}/*.parquet') """).record_batch()
         self.write_deltalake(
             f"{self.delta_abfss_schema_path}/{table_name}",
             arrow_df,
             mode="overwrite",
             engine='pyarrow'
-        ) 
+        )  
+
+    def register_table(self, table_name: str):
+        """
+        Register a Delta table in DuckDB.
+        """
+        self.duckdb.sql(f"CREATE OR REPLACE VIEW {table_name} AS SELECT * FROM delta_scan('{self.delta_abfss_schema_path}/{table_name}')")
+
+    def execute_sql_query(self, query: str):
+        """
+        Execute a SQL query using DuckDB.
+        """
+        result = self.duckdb.sql(query).df()
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(f"{self.delta_abfss_schema_path}/{table_name}/")
