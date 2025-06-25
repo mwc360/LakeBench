@@ -1,6 +1,5 @@
 from abc import ABC
 
-
 class BaseEngine(ABC):
     def __init__(self):
         """

@@ -30,7 +30,6 @@ class AtomicELT(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            mode: str,
             tpcds_parquet_mount_path: Optional[str],
             tpcds_parquet_abfss_path: Optional[str],
             result_abfss_path: Optional[str],
@@ -38,10 +37,6 @@ class AtomicELT(BaseBenchmark):
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         self.MODE_REGISTRY = ['light', 'full']
-        if mode not in self.MODE_REGISTRY:
-            raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
-        else:
-            self.mode = mode
         self.TABLE_REGISTRY = [
             'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
             'customer', 'customer_address', 'customer_demographics', 'date_dim',
@@ -49,10 +44,7 @@ class AtomicELT(BaseBenchmark):
             'promotion', 'reason', 'ship_mode', 'store', 'store_returns',
             'store_sales', 'time_dim', 'warehouse', 'web_page', 'web_returns',
             'web_sales', 'web_site'
-        ] if self.mode == 'full' else [
-            'store_sales', 'date_dim', 'store', 'item', 'customer'
-        ]
-
+        ] 
         self.benchmark_impl_class = next(
             (benchmark_impl for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items() if isinstance(engine, base_engine)),
             None
@@ -76,22 +68,22 @@ class AtomicELT(BaseBenchmark):
             self.engine
         )
 
-    def run(self):
+    def run(self, mode: str = 'light'):
 
-        match self.mode:
+        match mode:
             case 'light':
                 self.run_light_mode()
             case 'full':
                 raise NotImplementedError("Full mode is not implemented yet.")
             case _:
-                pass  # This case isn't possible due to earlier validation
+                raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
 
         results = self.post_results()
         return results
 
     def run_light_mode(self):
         with self.timer('Read parquet, write delta (x5)', self.benchmark_impl):
-            for table_name in self.TABLE_REGISTRY:
+            for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
                 self.benchmark_impl.load_parquet_to_delta(table_name)
 
         with self.timer('Create fact table', self.benchmark_impl):
@@ -102,10 +94,10 @@ class AtomicELT(BaseBenchmark):
                 self.benchmark_impl.merge_percent_into_total_sales_fact(0.001)
 
         with self.timer('OPTIMIZE', self.benchmark_impl):
-            self.benchmark_impl.optimize_table('total_sales_fact')
+            self.engine.optimize_table('total_sales_fact')
 
         with self.timer('VACUUM', self.benchmark_impl):
-            self.benchmark_impl.vacuum_table('total_sales_fact')
+            self.engine.vacuum_table('total_sales_fact', retain_hours=0, retention_check=False)
         
         with self.timer('Ad-hoc query (small result aggregation)', self.benchmark_impl):
             self.benchmark_impl.query_total_sales_fact()

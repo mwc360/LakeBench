@@ -1,6 +1,7 @@
 from typing import Optional
 from ..base import BaseBenchmark
 from ...utils.timer import timer
+from ...utils.query_utils import transpile_and_qualify_query
 from .engines.spark import SparkAtomicELT
 from .engines.duckdb import DuckDBAtomicELT
 from .engines.daft import DaftAtomicELT
@@ -16,34 +17,27 @@ import importlib.resources
 
 class TPCDS(BaseBenchmark):
     """
-    LightMode: minimal benchmark for quick comparisons.
-    Includes basic ELT actions: load data, simple transforms, incremental processing, maintenance jobs, small query.
     """
 
     BENCHMARK_IMPL_REGISTRY = {
         Spark: SparkAtomicELT,
-        DuckDB: DuckDBAtomicELT,
-        Daft: DaftAtomicELT,
-        Polars: PolarsAtomicELT
+        # DuckDB: DuckDBAtomicELT,
+        # Daft: DaftAtomicELT,
+        # Polars: PolarsAtomicELT
     }
 
     def __init__(
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            mode: str,
             query_list: Optional[list],
-            tpcds_parquet_mount_path: Optional[str],
-            tpcds_parquet_abfss_path: Optional[str],
+            parquet_mount_path: Optional[str],
+            parquet_abfss_path: Optional[str],
             result_abfss_path: Optional[str],
             save_results: bool = False
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         self.MODE_REGISTRY = ['load', 'query', 'power_test']
-        if mode not in self.MODE_REGISTRY:
-            raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
-        else:
-            self.mode = mode 
         self.TABLE_REGISTRY = [
             'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
             'customer', 'customer_address', 'customer_demographics', 'date_dim',
@@ -86,8 +80,8 @@ class TPCDS(BaseBenchmark):
             )
         
         self.storage_paths = {
-            "source_data_mount_path": tpcds_parquet_mount_path,
-            "source_data_abfss_path": tpcds_parquet_abfss_path,
+            "source_data_mount_path": parquet_mount_path,
+            "source_data_abfss_path": parquet_abfss_path,
         }
         self.engine = engine
         self.scenario_name = scenario_name
@@ -97,7 +91,6 @@ class TPCDS(BaseBenchmark):
         )
 
     def run(self, mode: str = 'light'):
-
         match mode:
             case 'load':
                 self._run_load_test()
@@ -106,7 +99,7 @@ class TPCDS(BaseBenchmark):
             case 'power_test':
                 raise NotImplementedError("Power test mode is not implemented yet.")
             case _:
-                raise ValueError(f"Unknown mode '{mode}'. Supported: {self.MODE_REGISTRY}.")
+                raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
             
         results = self.post_results()
         return results
@@ -114,20 +107,26 @@ class TPCDS(BaseBenchmark):
     def _run_load_test(self):
         self.benchmark_impl._prepare_schema() #TBD
         with self.timer('Loading TPCDS Tables', self.benchmark_impl):
-            # TBD: Add test_item logging
             for table_name in self.TABLE_REGISTRY:
-                self.benchmark_impl.load_parquet_to_delta(table_name) #TBD
+                # TBD: Add test_item logging
+                self.benchmark_impl.load_parquet_to_delta(f"{self.storage_paths['source_data_abfss_path']}/{table_name}", table_name) #TBD
 
     def _run_query_test(self):
         with self.timer('Loading TPCDS Tables', self.benchmark_impl):
-            # TBD: Add test_item logging
             for query_name in self.query_list:
-
                 with importlib.resources.path('lakebench.benchmarks.tpcds.resources.queries', f'{query_name}.sql') as query_path:
                     with open(query_path, 'r') as query_file:
                         query = query_file.read()
 
-                self.benchmark_impl.run_query(query) #TBD
+                prepped_query = transpile_and_qualify_query(
+                    query=query, 
+                    from_dialect='spark', 
+                    to_dialect=self.engine.sqlglot_dialect, 
+                    catalog=self.engine.catalog_reference,
+                    schema=self.engine.schema_reference
+                    )
+                #  TBD: Add test_item logging
+                execute_query = self.engine.execute_sql_query(prepped_query) #TBD
 
     def _run_power_test(self):
         self._run_load_test()

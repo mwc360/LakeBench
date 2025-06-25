@@ -103,14 +103,6 @@ class SparkAtomicELT:
                 VALUES (source.s_store_id, source.i_item_id, source.c_customer_id, source.sale_date, source.total_quantity, source.total_net_paid, source.total_net_profit);
         """)
         
-    def optimize_table(self, table_name: str):
-        self.engine.spark.sql(f"OPTIMIZE {self.engine.full_catalog_schema_reference}.total_sales_fact")
-
-
-    def vacuum_table(self, table_name: str):
-        self.engine.spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", False)
-        self.engine.spark.sql(f"VACUUM {self.engine.full_catalog_schema_reference}.total_sales_fact RETAIN 0 HOURS")
-
     def query_total_sales_fact(self):
         df = self.engine.spark.sql(f"""
                             select sum(total_net_profit), year(sale_date) 

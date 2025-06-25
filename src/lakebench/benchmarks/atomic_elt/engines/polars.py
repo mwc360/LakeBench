@@ -143,15 +143,6 @@ class PolarsAtomicELT:
             "total_net_paid": "source.total_net_paid",
             "total_net_profit": "source.total_net_profit",
         }).execute()
-        
-    def optimize_table(self, table_name: str):
-        fact_table = self.DeltaTable(f"{self.engine.delta_abfss_schema_path}/{table_name}/")
-        fact_table.optimize.compact()
-
-
-    def vacuum_table(self, table_name: str):
-        fact_table = self.DeltaTable(f"{self.engine.delta_abfss_schema_path}/{table_name}/")
-        fact_table.vacuum(0, enforce_retention_duration=False, dry_run=False)
 
     def query_total_sales_fact(self):
         query_df = self.engine.pl.scan_delta(

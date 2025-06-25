@@ -124,15 +124,6 @@ class DuckDBAtomicELT:
                 }
             ) \
             .execute()
-        
-    def optimize_table(self, table_name: str):
-        fact_table = self.DeltaTable(f"{self.engine.delta_abfss_schema_path}/{table_name}/")
-        fact_table.optimize.compact()
-
-
-    def vacuum_table(self, table_name: str):
-        fact_table = self.DeltaTable(f"{self.engine.delta_abfss_schema_path}/{table_name}/")
-        fact_table.vacuum(0, enforce_retention_duration=False, dry_run=False)
 
     def query_total_sales_fact(self):
         df = self.engine.duckdb.sql(f"""
