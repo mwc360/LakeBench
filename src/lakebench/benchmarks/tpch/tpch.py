@@ -14,4 +14,4 @@ class TPCH(_TPC):
         'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20',
         'q21', 'q22'
     ]
-    DDL_FILE_NAME = 'ddl_v3.2.0.sql'
+    DDL_FILE_NAME = 'ddl_v3.0.1.sql'
