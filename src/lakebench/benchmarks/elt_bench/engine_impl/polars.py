@@ -5,7 +5,7 @@ from IPython.core.getipython import get_ipython
 notebookutils = get_ipython().user_ns.get("notebookutils")
 
 
-class PolarsAtomicELT:
+class PolarsELTBench:
     def __init__(self, engine: Polars):
 
         import numpy as np

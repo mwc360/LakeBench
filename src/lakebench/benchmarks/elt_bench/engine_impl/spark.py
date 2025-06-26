@@ -1,6 +1,6 @@
 from ....engines.spark import Spark
 
-class SparkAtomicELT:
+class SparkELTBench:
     def __init__(self, engine: Spark):
         
         self.engine = engine

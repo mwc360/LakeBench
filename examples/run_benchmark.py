@@ -5,7 +5,7 @@ name = "BenchLake"
 #####
 
 
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.fabric_spark import FabricSpark
 
 engine = FabricSpark(
@@ -15,7 +15,7 @@ engine = FabricSpark(
     spark_measure_telemetry = False
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="4vCores",
     tpcds_parquet_abfss_path='abfss://........./Files/tpcds/source/sf1_parquet',
@@ -25,14 +25,14 @@ benchmark = AtomicELT(
 benchmark.run(mode="light")
 
 ###################
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.polars import Polars
 
 engine = Polars( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="4vCores",
     tpcds_parquet_abfss_path='abfss://........./Files/tpcds/source/sf1_parquet',
@@ -42,14 +42,14 @@ benchmark = AtomicELT(
 benchmark.run(mode="light")
 
 ###################
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.duckdb import DuckDB
 
 engine = DuckDB( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="4vCores",
     tpcds_parquet_abfss_path='abfss://........./Files/tpcds/source/sf1_parquet',
@@ -60,7 +60,7 @@ benchmark.run(mode="light")
 
 
 ###################
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.daft import Daft
 
 engine = Daft( 
@@ -68,7 +68,7 @@ engine = Daft(
     delta_mount_schema_path = '/lakehouse/default/Tables/polars_atomic_elt_100_8core'
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="4vCores",
     tpcds_parquet_mount_path='/lakehouse/default/Files/tpcds/source/sf1_parquet',

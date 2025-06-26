@@ -1,7 +1,7 @@
 from ....engines.daft import Daft
 from ....engines.delta_rs import DeltaRs
 
-class DaftAtomicELT:
+class DaftELTBench:
     def __init__(self, engine : Daft):
         self.engine = engine
 

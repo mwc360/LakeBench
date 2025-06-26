@@ -1,10 +1,10 @@
 from typing import Optional
 from ..base import BaseBenchmark
 from ...utils.timer import timer
-from .engines.spark import SparkAtomicELT
-from .engines.duckdb import DuckDBAtomicELT
-from .engines.daft import DaftAtomicELT
-from .engines.polars import PolarsAtomicELT
+from .engine_impl.spark import SparkELTBench
+from .engine_impl.duckdb import DuckDBELTBench
+from .engine_impl.daft import DaftELTBench
+from .engine_impl.polars import PolarsELTBench
 
 from ...engines.base import BaseEngine
 from ...engines.spark import Spark
@@ -13,17 +13,17 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 
 
-class AtomicELT(BaseBenchmark):
+class ELTBench(BaseBenchmark):
     """
     LightMode: minimal benchmark for quick comparisons.
     Includes basic ELT actions: load data, simple transforms, incremental processing, maintenance jobs, small query.
     """
 
     BENCHMARK_IMPL_REGISTRY = {
-        Spark: SparkAtomicELT,
-        DuckDB: DuckDBAtomicELT,
-        Daft: DaftAtomicELT,
-        Polars: PolarsAtomicELT
+        Spark: SparkELTBench,
+        DuckDB: DuckDBELTBench,
+        Daft: DaftELTBench,
+        Polars: PolarsELTBench
     }
     MODE_REGISTRY = ['light', 'full']
     TABLE_REGISTRY = [
@@ -78,7 +78,7 @@ class AtomicELT(BaseBenchmark):
                     raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
                 self.source_data_path = tpcds_parquet_mount_path
             case 'abfss':
-                if parquet_abfss_path is None:
+                if tpcds_parquet_abfss_path is None:
                     raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
                 self.source_data_path = tpcds_parquet_abfss_path
             case _:

@@ -1,10 +1,12 @@
 # LakeBench
 
-🌊 **LakeBench** is a modular, extensible benchmark framework for evaluating performance across lakehouse platforms, engines, and ELT scenarios.
+🌊 LakeBench is the first Python-based, multi-modal benchmarking framework designed to evaluate performance across multiple lakehouse compute engines and ELT scenarios. Supporting a variety of engines and both industry-standard and novel benchmarks, LakeBench enables comprehensive, apples-to-apples comparisons in a single, extensible Python library.
 
 Most existing benchmarks (like TPC-DS and TPC-H) are too query-heavy and miss the reality that data engineers build complex **ELT pipelines** — not just run analytic queries. While these traditional benchmarks are helpful for testing bulk loading and complex SQL execution, they do not reflect the broader data lifecycle that lakehouse systems must support.
 
-> My lightweight benchmark proposes that **the entire end-to-end data lifecycle which data engineers manage or encounter is relevant**: data loading, bulk transformations, incrementally applying transformations, maintenance jobs, and ad-hoc aggregative queries.
+**LakeBench bridges this gap by introducing novel benchmarks that aim to capture the growing spectrum of ELT workflows.** In addition to supporting industry standards like TPC-DS and TPC-H, LakeBench includes scenarios that measure not only query performance, but also data loading, transformation, incremental processing, and maintenance operations. This holistic approach enables you to benchmark engines on the real-world tasks that matter most for modern data engineering.
+
+> LakeBench proposes that **the entire end-to-end data lifecycle managed by data engineers is relevant**: data loading, bulk and incremental transformations, maintenance jobs, and ad-hoc analytical queries. By benchmarking these stages, LakeBench delivers actionable insights into engine efficiency, performance, and operational trade-offs across the full data pipeline.
 
 ---
 
@@ -22,26 +24,35 @@ Most existing benchmarks (like TPC-DS and TPC-H) are too query-heavy and miss th
 
 LakeBench currently supports one benchmark with more to come:
 
-- **AtomicELT**: A minimal ELT pipeline to evaluate:
+- **ELTBench**: An benchmark with various modes (`light`, `full`) that simulates typicaly ELT workloads:
   - Raw data load (Parquet → Delta)
   - Fact table generation
   - Incremental merge processing
   - Table maintenance (e.g. OPTIMIZE/VACUUM)
   - Ad-hoc analytical queries
-
-More advanced benchmarks (e.g. [TPC-DS](https://www.tpc.org/tpcds/) + [TPC-H](https://www.tpc.org/tpch/)) will soon be supported to evaluate scale and complexity of query workloads but are **not the default focus** of LakeBench.
+- **AtomicELT** (_COMING SOON)_: A derivative of _ELTBench_ that focuses on the performance of individual ELT operations. Each operation type is executed only once, allowing for granular comparison of engine performance on specific tasks. Results should be interpreted per operation, not as a cumulative runtime.
+- **[TPC-DS](https://www.tpc.org/tpcds/)**: An industry-standard benchmark for complex analytical queries, featuring 24 source tables and 99 queries. Designed to simulate decision support systems and analytics workloads.
+- **[TPC-H](https://www.tpc.org/tpch/)**: Focuses on ad-hoc decision support with 8 tables and 22 queries, evaluating performance on business-oriented analytical workloads.
 
 ---
 
-## 🛠️ Engines Supported
+## 🛠️ Engine Support Matrix
 
-LakeBench supports multiple lakehouse compute engines. Each benchmark declares its own supported engines.
+LakeBench supports multiple lakehouse compute engines. Each benchmark scenario declares which engines it supports via `<BenchmarkClassName>.BENCHMARK_IMPL_REGISTRY`.
 
-- ✅ Apache Spark (Fabric)
-- ✅ DuckDB
-- ✅ Polars
-- ✅ Daft
-- 🛠️ Extensible via engine wrappers
+| Benchmark   | Spark (Fabric) | DuckDB | Polars | Daft |
+|-------------|:--------------:|:------:|:------:|:----:|
+| ELTBench    |      ✅        |   ✅   |   ✅   |  ✅  |
+| AtomicELT   |      🔜        |   🔜   |   🔜   |  🔜  |
+| TPC-DS      |      ✅        |   ✅   |   ✅   |  ✅  |
+| TPC-H       |      ✅        |   ✅   |   ✅   |  ✅  |
+
+> **Legend:**  
+> ✅ = Supported  
+> 🔜 = Coming Soon  
+> (Blank) = Not currently supported 
+
+LakeBench is designed to be _extensible_—new engines can be added via subclassing an existing engine class, and benchmarks can register support for additional engines as they are implemented.
 
 ---
 
@@ -59,7 +70,7 @@ _Note: in this initial beta version, all engines have only been tested inside Mi
 
 ### Fabric Spark
 ```python
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.fabric_spark import FabricSpark
 
 engine = FabricSpark(
@@ -68,7 +79,7 @@ engine = FabricSpark(
     lakehouse_schema_name="schema"
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="sf10",
     mode="light",
@@ -82,14 +93,14 @@ benchmark.run()
 
 ### Polars
 ```python
-from lakebench.benchmarks.atomic_elt import AtomicELT
+from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.polars import Polars
 
 engine = Polars( 
     delta_abfss_schema_path = 'abfss://...'
 )
 
-benchmark = AtomicELT(
+benchmark = ELTBench(
     engine=engine,
     scenario_name="sf10",
     mode="light",

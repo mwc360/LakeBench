@@ -1,7 +1,7 @@
 from ....engines.duckdb import DuckDB
 from ....engines.delta_rs import DeltaRs
 
-class DuckDBAtomicELT:
+class DuckDBELTBench:
     def __init__(self, engine : DuckDB):
         self.engine = engine
 
