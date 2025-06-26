@@ -8,6 +8,9 @@ class Polars(BaseEngine):
     """
     Polars Engine for ELT Benchmarks.
     """
+    SQLGLOT_DIALECT = "duckdb"
+    REQUIRED_READ_ENDPOINT = None
+    REQUIRED_WRITE_ENDPOINT = "abfss"
 
     def __init__(
             self, 
@@ -19,7 +22,6 @@ class Polars(BaseEngine):
         import polars as pl
         self.pl = pl
         self.delta_abfss_schema_path = delta_abfss_schema_path
-        self.sqlglot_dialect = "duckdb"
         self.deltars = DeltaRs()
         self.storage_options={
             "bearer_token": notebookutils.credentials.getToken('storage')

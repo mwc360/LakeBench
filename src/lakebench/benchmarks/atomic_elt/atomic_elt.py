@@ -25,6 +25,15 @@ class AtomicELT(BaseBenchmark):
         Daft: DaftAtomicELT,
         Polars: PolarsAtomicELT
     }
+    MODE_REGISTRY = ['light', 'full']
+    TABLE_REGISTRY = [
+        'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
+        'customer', 'customer_address', 'customer_demographics', 'date_dim',
+        'household_demographics', 'income_band', 'inventory', 'item',
+        'promotion', 'reason', 'ship_mode', 'store', 'store_returns',
+        'store_sales', 'time_dim', 'warehouse', 'web_page', 'web_returns',
+        'web_sales', 'web_site'
+    ]
 
     def __init__(
             self, 
@@ -36,26 +45,22 @@ class AtomicELT(BaseBenchmark):
             save_results: bool = False
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
-        self.MODE_REGISTRY = ['light', 'full']
-        self.TABLE_REGISTRY = [
-            'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
-            'customer', 'customer_address', 'customer_demographics', 'date_dim',
-            'household_demographics', 'income_band', 'inventory', 'item',
-            'promotion', 'reason', 'ship_mode', 'store', 'store_returns',
-            'store_sales', 'time_dim', 'warehouse', 'web_page', 'web_returns',
-            'web_sales', 'web_site'
-        ] 
-        self.benchmark_impl_class = next(
-            (benchmark_impl for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items() if isinstance(engine, base_engine)),
-            None
-        )
-        self.timer = timer
-
-        if self.benchmark_impl_class is None:
+        for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items():
+            if isinstance(engine, base_engine):
+                self.benchmark_impl_class = benchmark_impl
+                if self.benchmark_impl_class is None:
+                    raise ValueError(
+                        f"No benchmark implementation registered for engine type: {type(engine).__name__} "
+                        f"in benchmark '{self.__class__.__name__}'."
+                    )
+                break
+        else:
             raise ValueError(
                 f"No benchmark implementation registered for engine type: {type(engine).__name__} "
                 f"in benchmark '{self.__class__.__name__}'."
             )
+        
+        self.timer = timer
         
         if isinstance(engine, Daft):
             if tpcds_parquet_mount_path is None:
@@ -66,6 +71,22 @@ class AtomicELT(BaseBenchmark):
         self.benchmark_impl = self.benchmark_impl_class(
             self.engine
         )
+
+        match engine.REQUIRED_READ_ENDPOINT:
+            case 'mount':
+                if tpcds_parquet_mount_path is None:
+                    raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
+                self.source_data_path = tpcds_parquet_mount_path
+            case 'abfss':
+                if parquet_abfss_path is None:
+                    raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
+                self.source_data_path = tpcds_parquet_abfss_path
+            case _:
+                if tpcds_parquet_mount_path is None and tpcds_parquet_abfss_path is None:
+                    raise ValueError(
+                        f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
+                    )
+                self.source_data_path = tpcds_parquet_abfss_path or tpcds_parquet_mount_path
 
     def run(self, mode: str = 'light'):
 

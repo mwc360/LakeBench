@@ -1,6 +1,10 @@
 from abc import ABC
 
 class BaseEngine(ABC):
+    SQLGLOT_DIALECT = None
+    REQUIRED_READ_ENDPOINT = None
+    REQUIRED_WRITE_ENDPOINT = None
+    
     def __init__(self):
         """
         Base Engine

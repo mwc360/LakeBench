@@ -4,6 +4,9 @@ class Spark(BaseEngine):
     """
     Spark Engine for ELT Benchmarks.
     """
+    SQLGLOT_DIALECT = "spark"
+    REQUIRED_READ_ENDPOINT = None
+    REQUIRED_WRITE_ENDPOINT = None
 
     def __init__(
             self,
@@ -26,8 +29,6 @@ class Spark(BaseEngine):
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`"
         self.catalog_name = catalog_name
         self.schema_name = schema_name
-        self.sqlglot_dialect = "spark"
-
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """

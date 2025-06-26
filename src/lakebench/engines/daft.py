@@ -8,6 +8,9 @@ class Daft(BaseEngine):
     """
     Daft Engine for ELT Benchmarks.
     """
+    SQLGLOT_DIALECT = "duckdb"
+    REQUIRED_READ_ENDPOINT = "mount"
+    REQUIRED_WRITE_ENDPOINT = "abfss"
 
     def __init__(
             self, 
@@ -21,7 +24,6 @@ class Daft(BaseEngine):
         self.daft = daft
         self.delta_mount_schema_path = delta_mount_schema_path
         self.delta_abfss_schema_path = delta_abfss_schema_path
-        self.sqlglot_dialect = "duckdb"
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
