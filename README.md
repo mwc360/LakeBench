@@ -22,7 +22,7 @@ Most existing benchmarks (like TPC-DS and TPC-H) are too query-heavy and miss th
 
 ## 🔍 Benchmark Scenarios
 
-LakeBench currently supports one benchmark with more to come:
+LakeBench currently supports three benchmarks with more to come:
 
 - **ELTBench**: An benchmark with various modes (`light`, `full`) that simulates typicaly ELT workloads:
   - Raw data load (Parquet → Delta)
@@ -30,9 +30,11 @@ LakeBench currently supports one benchmark with more to come:
   - Incremental merge processing
   - Table maintenance (e.g. OPTIMIZE/VACUUM)
   - Ad-hoc analytical queries
-- **AtomicELT** (_COMING SOON)_: A derivative of _ELTBench_ that focuses on the performance of individual ELT operations. Each operation type is executed only once, allowing for granular comparison of engine performance on specific tasks. Results should be interpreted per operation, not as a cumulative runtime.
 - **[TPC-DS](https://www.tpc.org/tpcds/)**: An industry-standard benchmark for complex analytical queries, featuring 24 source tables and 99 queries. Designed to simulate decision support systems and analytics workloads.
 - **[TPC-H](https://www.tpc.org/tpch/)**: Focuses on ad-hoc decision support with 8 tables and 22 queries, evaluating performance on business-oriented analytical workloads.
+
+_Coming Soon_
+- **AtomicELT**: A derivative of _ELTBench_ that focuses on the performance of individual ELT operations. Each operation type is executed only once, allowing for granular comparison of engine performance on specific tasks. Results should be interpreted per operation, not as a cumulative runtime.
 
 ---
 
