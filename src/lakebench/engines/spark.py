@@ -56,6 +56,12 @@ class Spark(BaseEngine):
     
     def execute_sql_query(self, query: str):
         execute_sql = self.spark.sql(query).collect()
+    
+    def execute_sql_statement(self, statement: str):
+        """
+        Execute a SQL statement.
+        """
+        self.spark.sql(statement)
 
     def optimize_table(self, table_name: str):
         self.spark.sql(f"OPTIMIZE {self.full_catalog_schema_reference}.{table_name}")

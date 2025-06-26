@@ -1,10 +1,3 @@
-##### NAME IDEAS
-name = "BenchFactory"
-name = "LakeBench"
-name = "BenchLake"
-#####
-
-
 from lakebench.engines.fabric_spark import FabricSpark
 from lakebench.benchmarks.elt_bench import ELTBench
 

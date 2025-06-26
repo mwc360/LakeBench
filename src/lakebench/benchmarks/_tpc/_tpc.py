@@ -42,6 +42,7 @@ class _TPC(BaseBenchmark):
         'q81', 'q82', 'q83', 'q84', 'q85', 'q86', 'q87', 'q88', 'q89', 'q90',
         'q91', 'q92', 'q93', 'q94', 'q95', 'q96', 'q97', 'q98', 'q99'
     ]
+    DDL_FILE_NAME = ''
 
     def __init__(
             self, 
@@ -100,15 +101,26 @@ class _TPC(BaseBenchmark):
             case 'query':
                 self._run_query_test()
             case 'power_test':
-                raise NotImplementedError("Power test mode is not implemented yet.")
+                self._run_power_test()
             case _:
                 raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
             
         results = self.post_results()
         return results
+    
+    def _prepare_schema(self):
+        self.engine.create_schema_if_not_exists(drop_before_create=True)
+        with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.ddl", self.DDL_FILE_NAME) as ddl_path:
+            with open(ddl_path, 'r') as ddl_file:
+                ddl = ddl_file.read()
+            
+        statements = [s for s in ddl.split(';') if len(s) > 7]
+        for statement in statements:
+            self.engine.execute_sql_statement(statement)
 
     def _run_load_test(self):
-        self.benchmark_impl._prepare_schema() #TBD
+        if isinstance(self.engine, Spark):
+            self._prepare_schema()
         with self.timer(f"Loading TPC{self.TPC_BENCHMARK_VARIANT} Tables", self.benchmark_impl):
             for table_name in self.TABLE_REGISTRY:
                 # TBD: Add test_item logging
