@@ -5,8 +5,8 @@ name = "BenchLake"
 #####
 
 
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.fabric_spark import FabricSpark
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = FabricSpark(
     lakehouse_workspace_name = 'mcole_scenario_repl', 
@@ -25,8 +25,8 @@ benchmark = ELTBench(
 benchmark.run(mode="light")
 
 ###################
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.polars import Polars
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = Polars( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
@@ -42,8 +42,8 @@ benchmark = ELTBench(
 benchmark.run(mode="light")
 
 ###################
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.duckdb import DuckDB
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = DuckDB( 
     delta_abfss_schema_path = 'abfss://.........../Tables/polars_atomic_elt_100_8core'
@@ -60,8 +60,8 @@ benchmark.run(mode="light")
 
 
 ###################
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.daft import Daft
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = Daft( 
     delta_abfss_schema_path = 'abfss://............./Tables/polars_atomic_elt_100_8core',

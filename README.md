@@ -72,8 +72,8 @@ _Note: in this initial beta version, all engines have only been tested inside Mi
 
 ### Fabric Spark
 ```python
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.fabric_spark import FabricSpark
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = FabricSpark(
     lakehouse_workspace_name="workspace",
@@ -95,8 +95,8 @@ benchmark.run()
 
 ### Polars
 ```python
-from lakebench.benchmarks.elt_bench import ELTBench
 from lakebench.engines.polars import Polars
+from lakebench.benchmarks.elt_bench import ELTBench
 
 engine = Polars( 
     delta_abfss_schema_path = 'abfss://...'
