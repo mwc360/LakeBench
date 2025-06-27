@@ -1,6 +1,6 @@
 from typing import Optional
 from ..base import BaseBenchmark
-from ...utils.timer import timer
+
 from .engine_impl.spark import SparkELTBench
 from .engine_impl.duckdb import DuckDBELTBench
 from .engine_impl.daft import DaftELTBench
@@ -62,8 +62,6 @@ class ELTBench(BaseBenchmark):
                 f"in benchmark '{self.__class__.__name__}'."
             )
         
-        self.timer = timer
-        
         if isinstance(engine, Daft):
             if tpcds_parquet_mount_path is None:
                 raise ValueError("parquet_mount_path must be provided for Daft engine.")
@@ -100,50 +98,28 @@ class ELTBench(BaseBenchmark):
             case _:
                 raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
 
-        results = self.post_results()
-        return results
-
     def run_light_mode(self):
-        with self.timer('Read parquet, write delta (x5)', self.benchmark_impl):
-            for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
+        for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
+            with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(
                     parquet_folder_path=posixpath.join(self.source_data_path, table_name), 
                     table_name=table_name
                 )
-
-        with self.timer('Create fact table', self.benchmark_impl):
+        with self.timer(phase="Create fact table", test_item='total_sales_fact', engine=self.engine):
             self.benchmark_impl.create_total_sales_fact()
 
-        with self.timer('Merge 0.1% into fact table (3x)', self.benchmark_impl):
-            for _ in range(3):
+        for _ in range(3):
+            with self.timer(phase="Merge 0.1% into fact table (3x)", test_item='total_sales_fact', engine=self.engine):
                 self.benchmark_impl.merge_percent_into_total_sales_fact(0.001)
 
-        with self.timer('OPTIMIZE', self.benchmark_impl):
+        with self.timer(phase="OPTIMIZE", test_item='total_sales_fact', engine=self.engine):
             self.engine.optimize_table('total_sales_fact')
 
-        with self.timer('VACUUM', self.benchmark_impl):
+        with self.timer(phase="VACUUM", test_item='total_sales_fact', engine=self.engine):
             self.engine.vacuum_table('total_sales_fact', retain_hours=0, retention_check=False)
-        
-        with self.timer('Ad-hoc query (small result aggregation)', self.benchmark_impl):
+
+        with self.timer(phase="Ad-hoc query (small result aggregation)", test_item='total_sales_fact', engine=self.engine):
             self.benchmark_impl.query_total_sales_fact()
 
-    def post_results(self):
-        result_array = []
-        for phase, duration_ms in self.timer.results:
-            result_array.append({
-                "phase": phase,
-                "duration_sec": duration_ms / 1000,  # Convert ms to seconds
-                "duration_ms": duration_ms,
-                "engine": type(self.engine).__name__,
-                "scenario": self.scenario_name,
-                "cores": self.engine.get_total_cores()
-            })
+        self.post_results()
 
-        if self.save_results:
-            if self.result_abfss_path is None:
-                raise ValueError("result_abfss_path must be provided if save_results is True.")
-            else:
-                self.engine.append_array_to_delta(self.result_abfss_path, result_array)
-
-        self.timer.clear_results()
-        return result_array
