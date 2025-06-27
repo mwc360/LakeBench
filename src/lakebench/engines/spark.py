@@ -51,7 +51,7 @@ class Spark(BaseEngine):
         return cores
     
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
-        df = self.spark.read.parquet(f"{parquet_folder_path}")
+        df = self.spark.read.parquet(parquet_folder_path)
         df.write.mode("append").saveAsTable(table_name)
     
     def execute_sql_query(self, query: str):

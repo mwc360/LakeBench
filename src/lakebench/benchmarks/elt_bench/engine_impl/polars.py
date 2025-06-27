@@ -4,6 +4,7 @@ from ....engines.delta_rs import DeltaRs
 from IPython.core.getipython import get_ipython
 notebookutils = get_ipython().user_ns.get("notebookutils")
 
+import posixpath
 
 class PolarsELTBench:
     def __init__(self, engine: Polars):
@@ -20,18 +21,18 @@ class PolarsELTBench:
 
     def create_total_sales_fact(self):
         fact_table_df = (
-            self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/store_sales", storage_options=self.storage_options)
+            self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales'), storage_options=self.storage_options)
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/date_dim", storage_options=self.storage_options), left_on="ss_sold_date_sk", right_on="d_date_sk"
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'dim_date'), storage_options=self.storage_options), left_on="ss_sold_date_sk", right_on="d_date_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/store", storage_options=self.storage_options), left_on="ss_store_sk", right_on="s_store_sk"
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store'), storage_options=self.storage_options), left_on="ss_store_sk", right_on="s_store_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/item", storage_options=self.storage_options), left_on="ss_item_sk", right_on="i_item_sk"
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'item'), storage_options=self.storage_options), left_on="ss_item_sk", right_on="i_item_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/customer", storage_options=self.storage_options), left_on="ss_customer_sk", right_on="c_customer_sk"
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'customer'), storage_options=self.storage_options), left_on="ss_customer_sk", right_on="c_customer_sk"
             )
             .with_columns(
                     self.engine.pl.col("d_date").alias("sale_date")
@@ -47,7 +48,7 @@ class PolarsELTBench:
         )
 
         fact_table_df.collect(engine='streaming').write_delta(
-            f"{self.engine.delta_abfss_schema_path}/total_sales_fact/",
+            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
             mode="overwrite",
             storage_options=self.storage_options
         )
@@ -57,24 +58,24 @@ class PolarsELTBench:
         seed = self.np.random.randint(1, high=1000, size=None, dtype=int)
         modulo = int(1 / percent)
         sampled_fact_data = (
-            self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/store_sales", storage_options=self.storage_options)
+            self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales'), storage_options=self.storage_options)
             .filter(
                 ((self.engine.pl.col("ss_item_sk") * 1000000 + self.engine.pl.col("ss_ticket_number") + seed).hash() % modulo) == 0
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/date_dim", storage_options=self.storage_options), 
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'dim_date'), storage_options=self.storage_options), 
                 left_on="ss_sold_date_sk", right_on="d_date_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/store", storage_options=self.storage_options), 
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store'), storage_options=self.storage_options), 
                 left_on="ss_store_sk", right_on="s_store_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/item", storage_options=self.storage_options), 
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'item'), storage_options=self.storage_options), 
                 left_on="ss_item_sk", right_on="i_item_sk"
             )
             .join(
-                self.engine.pl.scan_delta(f"{self.engine.delta_abfss_schema_path}/customer", storage_options=self.storage_options), 
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'customer'), storage_options=self.storage_options), 
                 left_on="ss_customer_sk", right_on="c_customer_sk"
             )
             .with_columns([
@@ -105,7 +106,7 @@ class PolarsELTBench:
         )
 
         sampled_fact_data.collect(engine='streaming').write_delta(
-            f"{self.engine.delta_abfss_schema_path}/total_sales_fact/", 
+            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'), 
             mode="merge", 
             delta_merge_options={
                 "predicate": """
@@ -136,7 +137,7 @@ class PolarsELTBench:
 
     def query_total_sales_fact(self):
         query_df = self.engine.pl.scan_delta(
-            f"{self.engine.delta_abfss_schema_path}/total_sales_fact", storage_options=self.storage_options
+            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'), storage_options=self.storage_options
         ).group_by(
             self.engine.pl.col("sale_date").dt.year()
         ).agg(

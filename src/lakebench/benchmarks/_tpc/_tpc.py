@@ -10,6 +10,7 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 
 import importlib.resources
+import posixpath
 
 class _TPC(BaseBenchmark):
     """
@@ -131,7 +132,7 @@ class _TPC(BaseBenchmark):
             for table_name in self.TABLE_REGISTRY:
                 # TBD: Add test_item logging
                 self.engine.load_parquet_to_delta(
-                    parquet_folder_path=f"{self.source_data_path}/{table_name}", 
+                    parquet_folder_path=posixpath.join(self.source_data_path,table_name), 
                     table_name=table_name
                 )
 

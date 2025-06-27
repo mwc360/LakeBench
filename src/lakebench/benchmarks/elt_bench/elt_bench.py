@@ -12,6 +12,8 @@ from ...engines.duckdb import DuckDB
 from ...engines.daft import Daft
 from ...engines.polars import Polars
 
+import posixpath
+
 
 class ELTBench(BaseBenchmark):
     """
@@ -105,7 +107,7 @@ class ELTBench(BaseBenchmark):
         with self.timer('Read parquet, write delta (x5)', self.benchmark_impl):
             for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
                 self.engine.load_parquet_to_delta(
-                    parquet_folder_path=f"{self.source_data_path}/{table_name}", 
+                    parquet_folder_path=posixpath.join(self.source_data_path, table_name), 
                     table_name=table_name
                 )
 
