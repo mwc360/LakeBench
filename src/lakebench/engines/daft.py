@@ -32,7 +32,7 @@ class Daft(BaseEngine):
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         table_df = self.daft.read_parquet(
-            posixpath.join(parquet_folder_path, table_name, '*.parquet')
+            posixpath.join(parquet_folder_path, '*.parquet')
         )
         table_df.write_deltalake(
             posixpath.join(self.delta_abfss_schema_path, table_name),
@@ -63,4 +63,4 @@ class Daft(BaseEngine):
         fact_table = self.deltars.DeltaTable(
             posixpath.join(self.delta_abfss_schema_path, table_name)
         )
-        fact_table.vacuum({retain_hours}, enforce_retention_duration=retention_check, dry_run=False)
+        fact_table.vacuum(retain_hours, enforce_retention_duration=retention_check, dry_run=False)

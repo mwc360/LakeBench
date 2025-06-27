@@ -20,7 +20,7 @@ def timer(phase: str = "Elapsed time", test_item: str = '', engine: str = None):
     finally:
         end = time.time()
         duration = int((end - start) * 1000)
-        print(f"{phase} - {test_item} [i:{iteration}]: {(duration / 1000):.2f} seconds")
+        print(f"{phase} - {test_item}{f" [i:{iteration}]" if iteration > 1 else ""}: {(duration / 1000):.2f} seconds")
         if isinstance(engine, Spark):
             engine.spark.sparkContext.setJobDescription(None)
         timer.results.append((phase, test_item, start_datetime, duration, iteration))

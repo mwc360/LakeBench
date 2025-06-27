@@ -30,10 +30,11 @@ class Polars(BaseEngine):
         }
         self.catalog_name = None
         self.schema_name = None
+        self.sql = pl.SQLContext()
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         table_df = self.pl.scan_parquet(
-            posixpath.join(parquet_folder_path, table_name, '*.parquet'), 
+            posixpath.join(parquet_folder_path, '*.parquet'), 
             storage_options=self.storage_options
         )
         table_df.collect(engine='streaming').write_delta(
@@ -46,16 +47,17 @@ class Polars(BaseEngine):
         """
         Register a Delta table LazyFrame in Polars.
         """
-        globals()[table_name] = self.pl.scan_delta(
+        df = self.pl.scan_delta(
             posixpath.join(self.delta_abfss_schema_path, table_name), 
             storage_options=self.storage_options
         )
+        self.sql.register(table_name, df)
 
     def execute_sql_query(self, query: str):
         """
         Execute a SQL query using Polars.
         """
-        result = self.pl.sql(query).collect(engine='streaming')
+        result = self.sql.execute(query).collect(engine='streaming')
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(
@@ -67,4 +69,4 @@ class Polars(BaseEngine):
         fact_table = self.deltars.DeltaTable(
             posixpath.join(self.delta_abfss_schema_path, table_name)
         )
-        fact_table.vacuum({retain_hours}, enforce_retention_duration=retention_check, dry_run=False)
+        fact_table.vacuum(retain_hours, enforce_retention_duration=retention_check, dry_run=False)

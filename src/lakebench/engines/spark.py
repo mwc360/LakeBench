@@ -43,7 +43,9 @@ class Spark(BaseEngine):
         """
         Append an array to a Delta table.
         """
-        df = self.spark.createDataFrame(array)
+        # Use default order of columns in dictionary
+        columns = list(array[0].keys())
+        df = self.spark.createDataFrame(array).select(*columns)
         df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
 
     def get_total_cores(self):

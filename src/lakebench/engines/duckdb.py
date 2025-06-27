@@ -27,7 +27,7 @@ class DuckDB(BaseEngine):
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()
-        self.write_deltalake(
+        self.deltars.write_deltalake(
             posixpath.join(self.delta_abfss_schema_path, table_name),
             arrow_df,
             mode="overwrite",
@@ -59,4 +59,4 @@ class DuckDB(BaseEngine):
         fact_table = self.deltars.DeltaTable(
             posixpath.join(self.delta_abfss_schema_path, table_name)
         )
-        fact_table.vacuum({retain_hours}, enforce_retention_duration=retention_check, dry_run=False)
+        fact_table.vacuum(retain_hours, enforce_retention_duration=retention_check, dry_run=False)

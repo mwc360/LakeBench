@@ -13,6 +13,4 @@ class DeltaRs(BaseEngine):
         from deltalake import DeltaTable
         self.write_deltalake = write_deltalake
         self.DeltaTable = DeltaTable
-
-        self.deltars = DeltaRs()
         
