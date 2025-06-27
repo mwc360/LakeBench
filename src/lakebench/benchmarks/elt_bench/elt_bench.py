@@ -41,9 +41,9 @@ class ELTBench(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            tpcds_parquet_mount_path: Optional[str],
-            tpcds_parquet_abfss_path: Optional[str],
-            result_abfss_path: Optional[str],
+            tpcds_parquet_mount_path: Optional[str] = None,
+            tpcds_parquet_abfss_path: Optional[str] = None,
+            result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)

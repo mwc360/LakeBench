@@ -1,6 +1,5 @@
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
-from ..utils.query_utils import replace_catalog_table_references
 
 import posixpath
 

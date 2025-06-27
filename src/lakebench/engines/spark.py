@@ -26,9 +26,9 @@ class Spark(BaseEngine):
         self.sf = sf
         self.spark = SparkSession.builder.getOrCreate()
 
-        self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`"
         self.catalog_name = catalog_name
         self.schema_name = schema_name
+        self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`"
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """
@@ -89,5 +89,5 @@ class Spark(BaseEngine):
         self.spark.sql(f"OPTIMIZE {self.full_catalog_schema_reference}.{table_name}")
 
     def vacuum_table(self, table_name: str, retain_hours: int = 168, retention_check: bool = True):
-        self.spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", {retention_check})
+        self.spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", retention_check)
         self.spark.sql(f"VACUUM {self.full_catalog_schema_reference}.{table_name} RETAIN {retain_hours} HOURS")

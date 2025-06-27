@@ -34,6 +34,6 @@ ROLLUP (
 )
 ORDER BY
   lochierarchy DESC,
-  CASE WHEN lochierarchy = 0 THEN s_state END,
+  CASE WHEN GROUPING(s_state) + GROUPING(s_county) = 0 THEN s_state END,
   rank_within_parent
 LIMIT 100

@@ -15,7 +15,7 @@ class BaseBenchmark(ABC):
         self.header_detail_dict = {
             'run_id': str(uuid.uuid1()),
             'run_datetime': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-            'engine': Type(engine).__name__,
+            'engine': type(engine).__name__,
             'benchmark': self.__class__.__name__,
             'scenario': scenario_name,
             'total_cores': self.engine.get_total_cores(),

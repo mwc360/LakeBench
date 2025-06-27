@@ -48,10 +48,10 @@ class _TPC(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            query_list: Optional[list],
-            parquet_mount_path: Optional[str],
-            parquet_abfss_path: Optional[str],
-            result_abfss_path: Optional[str],
+            query_list: Optional[list[str]] | None = None,
+            parquet_mount_path: Optional[str] = None,
+            parquet_abfss_path: Optional[str] = None,
+            result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)

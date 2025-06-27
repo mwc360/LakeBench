@@ -3,7 +3,7 @@ SELECT
   i_brand,
   i_class,
   i_category,
-  AVG(inv_quantity_on_hand) AS qoh
+  AVG(CAST(inv_quantity_on_hand AS BIGINT)) AS qoh
 FROM inventory, date_dim, item
 WHERE
   inv_date_sk = d_date_sk
