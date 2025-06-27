@@ -57,9 +57,12 @@ class _TPC(BaseBenchmark):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         if query_list is not None:
             query_set = set(query_list)
-            if not query_set.issubset(self.QUERY_REGISTRY):
-                unsupported_queries = query_set - set(self.QUERY_REGISTRY)
-                raise ValueError(f"Query list contains unsupported queries: {unsupported_queries}. Supported queries: {self.QUERY_REGISTRY}.")
+            if '*' in query_set:
+                query_list = self.QUERY_REGISTRY * query_list.count('*')
+            else:
+                if not query_set.issubset(self.QUERY_REGISTRY):
+                    unsupported_queries = query_set - set(self.QUERY_REGISTRY)
+                    raise ValueError(f"Query list contains unsupported queries: {unsupported_queries}. Supported queries: {self.QUERY_REGISTRY}.")
             self.query_list = query_list
         else:
             self.query_list = self.QUERY_REGISTRY
