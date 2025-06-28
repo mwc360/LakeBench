@@ -23,7 +23,7 @@ class PolarsELTBench:
         fact_table_df = (
             self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales'), storage_options=self.storage_options)
             .join(
-                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'dim_date'), storage_options=self.storage_options), left_on="ss_sold_date_sk", right_on="d_date_sk"
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim'), storage_options=self.storage_options), left_on="ss_sold_date_sk", right_on="d_date_sk"
             )
             .join(
                 self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'store'), storage_options=self.storage_options), left_on="ss_store_sk", right_on="s_store_sk"
@@ -63,7 +63,7 @@ class PolarsELTBench:
                 ((self.engine.pl.col("ss_item_sk") * 1000000 + self.engine.pl.col("ss_ticket_number") + seed).hash() % modulo) == 0
             )
             .join(
-                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'dim_date'), storage_options=self.storage_options), 
+                self.engine.pl.scan_delta(posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim'), storage_options=self.storage_options), 
                 left_on="ss_sold_date_sk", right_on="d_date_sk"
             )
             .join(

@@ -14,7 +14,7 @@ class DaftELTBench:
         fact_table_df = (
             self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'store_sales'))
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'dim_date')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'date_dim')), 
                 left_on="ss_sold_date_sk", 
                 right_on="d_date_sk"
             )
@@ -58,7 +58,7 @@ class DaftELTBench:
             self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'store_sales'))
             .sample(percent)
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'dim_date')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_mount_schema_path, 'date_dim')), 
                 left_on="ss_sold_date_sk", 
                 right_on="d_date_sk"
             )
