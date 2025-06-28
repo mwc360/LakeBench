@@ -5,6 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lakebench"
 version = "0.1.0"
+authors = [
+    { name="Miles Cole", email="m.w.c.360@gmail.com" },
+]
+license = {file = "LICENSE"}
+description = "A multi-modal Python library for benchmarking Azure lakehouse engines and ELT scenarios, supporting both industry-standard and novel benchmarks."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Intended Audience :: Data Engineers",
+    "Topic :: Software Development :: Testing and Benchmarking",
+]
 dependencies = [
     "numpy",
     "pyarrow>=15.0.0",
@@ -18,6 +32,10 @@ polars = ["polars==1.30.0"]
 daft = ["getdaft==0.4.18"]
 all = ["duckdb==1.3.1", "polars==1.30.0", "getdaft==0.4.18"]
 datagen = ["duckdb==1.3.1"]
+
+[project.urls]
+Homepage = "https://github.com/mwc360/LakeBench"
+Issues = "https://github.com/mwc360/LakeBench/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
