@@ -24,5 +24,4 @@ ORDER BY
   i_item_id,
   i_item_desc,
   revenueratio
-LIMIT 100;
-
+LIMIT 100

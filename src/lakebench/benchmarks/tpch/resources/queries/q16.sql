@@ -4,11 +4,10 @@ SELECT
     p_size,
     COUNT(DISTINCT ps_suppkey) AS supplier_cnt
 FROM
-    partsupp,
-    part
+    partsupp
+    INNER JOIN part ON p_partkey = ps_partkey
 WHERE
-    p_partkey = ps_partkey
-    AND p_brand <> 'Brand#15'
+    p_brand <> 'Brand#15'
     AND NOT p_type LIKE 'ECONOMY BRUSHED%'
     AND p_size IN (7, 22, 42, 4, 39, 1, 41, 45)
     AND NOT ps_suppkey IN (

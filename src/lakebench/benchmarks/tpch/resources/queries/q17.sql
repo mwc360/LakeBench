@@ -1,11 +1,10 @@
 SELECT
     SUM(l_extendedprice) / 7.0 AS avg_yearly
 FROM
-    lineitem,
-    part
+    lineitem
+    INNER JOIN part ON p_partkey = l_partkey
 WHERE
-    p_partkey = l_partkey
-    AND p_brand = 'Brand#55'
+    p_brand = 'Brand#55'
     AND p_container = 'SM PACK'
     AND l_quantity < (
         SELECT

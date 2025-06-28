@@ -10,9 +10,9 @@ WITH year_total AS (
     d_year AS dyear,
     SUM(ss_ext_list_price - ss_ext_discount_amt) AS year_total,
     's' AS sale_type
-  FROM customer, store_sales, date_dim
-  WHERE
-    c_customer_sk = ss_customer_sk AND ss_sold_date_sk = d_date_sk
+  FROM customer
+  JOIN store_sales ON c_customer_sk = ss_customer_sk
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
   GROUP BY
     c_customer_id,
     c_first_name,
@@ -34,9 +34,9 @@ WITH year_total AS (
     d_year AS dyear,
     SUM(ws_ext_list_price - ws_ext_discount_amt) AS year_total,
     'w' AS sale_type
-  FROM customer, web_sales, date_dim
-  WHERE
-    c_customer_sk = ws_bill_customer_sk AND ws_sold_date_sk = d_date_sk
+  FROM customer
+  JOIN web_sales ON c_customer_sk = ws_bill_customer_sk
+  JOIN date_dim ON ws_sold_date_sk = d_date_sk
   GROUP BY
     c_customer_id,
     c_first_name,
@@ -52,12 +52,12 @@ SELECT
   t_s_secyear.customer_first_name,
   t_s_secyear.customer_last_name,
   t_s_secyear.customer_preferred_cust_flag
-FROM year_total AS t_s_firstyear, year_total AS t_s_secyear, year_total AS t_w_firstyear, year_total AS t_w_secyear
+FROM year_total AS t_s_firstyear
+JOIN year_total AS t_s_secyear ON t_s_secyear.customer_id = t_s_firstyear.customer_id
+JOIN year_total AS t_w_firstyear ON t_s_firstyear.customer_id = t_w_firstyear.customer_id
+JOIN year_total AS t_w_secyear ON t_s_firstyear.customer_id = t_w_secyear.customer_id
 WHERE
-  t_s_secyear.customer_id = t_s_firstyear.customer_id
-  AND t_s_firstyear.customer_id = t_w_secyear.customer_id
-  AND t_s_firstyear.customer_id = t_w_firstyear.customer_id
-  AND t_s_firstyear.sale_type = 's'
+  t_s_firstyear.sale_type = 's'
   AND t_w_firstyear.sale_type = 'w'
   AND t_s_secyear.sale_type = 's'
   AND t_w_secyear.sale_type = 'w'

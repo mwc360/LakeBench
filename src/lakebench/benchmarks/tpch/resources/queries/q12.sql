@@ -15,11 +15,10 @@ SELECT
         END
     ) AS low_line_count
 FROM
-    orders,
-    lineitem
+    orders
+    INNER JOIN lineitem ON o_orderkey = l_orderkey
 WHERE
-    o_orderkey = l_orderkey
-    AND l_shipmode IN ('FOB', 'REG AIR')
+    l_shipmode IN ('FOB', 'REG AIR')
     AND l_commitdate < l_receiptdate
     AND l_shipdate < l_commitdate
     AND l_receiptdate >= CAST('1993-01-01' AS DATE)

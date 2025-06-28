@@ -13,41 +13,41 @@ SELECT
   COUNT(*) AS cnt5,
   cd_dep_college_count,
   COUNT(*) AS cnt6
-FROM customer AS c, customer_address AS ca, customer_demographics
+FROM customer AS c
+JOIN customer_address AS ca ON c.c_current_addr_sk = ca.ca_address_sk
+JOIN customer_demographics AS cd ON cd_demo_sk = c.c_current_cdemo_sk
 WHERE
-  c.c_current_addr_sk = ca.ca_address_sk
-  AND ca_county IN ('Shawnee County', 'Jersey County', 'Big Stone County', 'Polk County', 'Wolfe County')
-  AND cd_demo_sk = c.c_current_cdemo_sk
+  ca_county IN ('Shawnee County', 'Jersey County', 'Big Stone County', 'Polk County', 'Wolfe County')
   AND EXISTS(
     SELECT
       *
-    FROM store_sales, date_dim
+    FROM store_sales AS ss
+    JOIN date_dim AS d ON ss.ss_sold_date_sk = d.d_date_sk
     WHERE
-      c.c_customer_sk = ss_customer_sk
-      AND ss_sold_date_sk = d_date_sk
-      AND d_year = 1999
-      AND d_moy BETWEEN 4 AND 4 + 3
+      c.c_customer_sk = ss.ss_customer_sk
+      AND d.d_year = 1999
+      AND d.d_moy BETWEEN 4 AND 4 + 3
   )
   AND (
     EXISTS(
       SELECT
         *
-      FROM web_sales, date_dim
+      FROM web_sales AS ws
+      JOIN date_dim AS d ON ws.ws_sold_date_sk = d.d_date_sk
       WHERE
-        c.c_customer_sk = ws_bill_customer_sk
-        AND ws_sold_date_sk = d_date_sk
-        AND d_year = 1999
-        AND d_moy BETWEEN 4 AND 4 + 3
+        c.c_customer_sk = ws.ws_bill_customer_sk
+        AND d.d_year = 1999
+        AND d.d_moy BETWEEN 4 AND 4 + 3
     )
     OR EXISTS(
       SELECT
         *
-      FROM catalog_sales, date_dim
+      FROM catalog_sales AS cs
+      JOIN date_dim AS d ON cs.cs_sold_date_sk = d.d_date_sk
       WHERE
-        c.c_customer_sk = cs_ship_customer_sk
-        AND cs_sold_date_sk = d_date_sk
-        AND d_year = 1999
-        AND d_moy BETWEEN 4 AND 4 + 3
+        c.c_customer_sk = cs.cs_ship_customer_sk
+        AND d.d_year = 1999
+        AND d.d_moy BETWEEN 4 AND 4 + 3
     )
   )
 GROUP BY
