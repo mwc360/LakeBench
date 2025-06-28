@@ -17,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Intended Audience :: Developers",
-    "Topic :: Software Development :: Testing and Benchmarking",
+    "Topic :: System :: Benchmark",
 ]
 dependencies = [
     "numpy",
