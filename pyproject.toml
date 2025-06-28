@@ -16,7 +16,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
-    "Intended Audience :: Data Engineers",
+    "Intended Audience :: Developers",
     "Topic :: Software Development :: Testing and Benchmarking",
 ]
 dependencies = [
