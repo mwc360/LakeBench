@@ -6,9 +6,9 @@ SELECT
     o_totalprice,
     SUM(l_quantity)
 FROM
-    customer,
-    orders,
-    lineitem
+    customer
+    INNER JOIN orders ON c_custkey = o_custkey
+    INNER JOIN lineitem ON o_orderkey = l_orderkey
 WHERE
     o_orderkey IN (
         SELECT
@@ -20,8 +20,6 @@ WHERE
         HAVING
             SUM(l_quantity) > 315
     )
-    AND c_custkey = o_custkey
-    AND o_orderkey = l_orderkey
 GROUP BY
     c_name,
     c_custkey,

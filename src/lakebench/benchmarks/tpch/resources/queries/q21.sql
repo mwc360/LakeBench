@@ -2,14 +2,12 @@ SELECT
     s_name,
     COUNT(*) AS numwait
 FROM
-    supplier,
-    lineitem AS l1,
-    orders,
-    nation
+    supplier
+    INNER JOIN lineitem AS l1 ON s_suppkey = l1.l_suppkey
+    INNER JOIN orders ON o_orderkey = l1.l_orderkey
+    INNER JOIN nation ON s_nationkey = n_nationkey
 WHERE
-    s_suppkey = l1.l_suppkey
-    AND o_orderkey = l1.l_orderkey
-    AND o_orderstatus = 'F'
+    o_orderstatus = 'F'
     AND l1.l_receiptdate > l1.l_commitdate
     AND EXISTS(
         SELECT
@@ -30,7 +28,6 @@ WHERE
             AND l3.l_suppkey <> l1.l_suppkey
             AND l3.l_receiptdate > l3.l_commitdate
     )
-    AND s_nationkey = n_nationkey
     AND n_name = 'SAUDI ARABIA'
 GROUP BY
     s_name

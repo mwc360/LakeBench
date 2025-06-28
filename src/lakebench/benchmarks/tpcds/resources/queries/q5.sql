@@ -23,11 +23,11 @@ WITH ssr AS (
       sr_return_amt AS return_amt,
       sr_net_loss AS net_loss
     FROM store_returns
-  ) AS salesreturns, date_dim, store
+  ) AS salesreturns
+  JOIN date_dim ON date_sk = d_date_sk
+  JOIN store ON store_sk = s_store_sk
   WHERE
-    date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
-    AND store_sk = s_store_sk
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
   GROUP BY
     s_store_id
 ), csr AS (
@@ -55,11 +55,11 @@ WITH ssr AS (
       cr_return_amount AS return_amt,
       cr_net_loss AS net_loss
     FROM catalog_returns
-  ) AS salesreturns, date_dim, catalog_page
+  ) AS salesreturns
+  JOIN date_dim ON date_sk = d_date_sk
+  JOIN catalog_page ON page_sk = cp_catalog_page_sk
   WHERE
-    date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
-    AND page_sk = cp_catalog_page_sk
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
   GROUP BY
     cp_catalog_page_id
 ), wsr AS (
@@ -87,15 +87,12 @@ WITH ssr AS (
       wr_return_amt AS return_amt,
       wr_net_loss AS net_loss
     FROM web_returns
-    LEFT OUTER JOIN web_sales
-      ON (
-        wr_item_sk = ws_item_sk AND wr_order_number = ws_order_number
-      )
-  ) AS salesreturns, date_dim, web_site
+    JOIN web_sales ON wr_item_sk = ws_item_sk AND wr_order_number = ws_order_number
+  ) AS salesreturns
+  JOIN date_dim ON date_sk = d_date_sk
+  JOIN web_site ON wsr_web_site_sk = web_site_sk
   WHERE
-    date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
-    AND wsr_web_site_sk = web_site_sk
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND DATE_ADD(CAST('1999-08-29' AS DATE), 14)
   GROUP BY
     web_site_id
 )

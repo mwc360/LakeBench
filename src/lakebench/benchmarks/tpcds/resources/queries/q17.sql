@@ -14,20 +14,20 @@ SELECT
   AVG(cs_quantity) AS catalog_sales_quantityave,
   STDDEV(cs_quantity) AS catalog_sales_quantitystdev,
   STDDEV(cs_quantity) / AVG(cs_quantity) AS catalog_sales_quantitycov
-FROM store_sales, store_returns, catalog_sales, date_dim AS d1, date_dim AS d2, date_dim AS d3, store, item
-WHERE
-  d1.d_quarter_name = '1999Q1'
-  AND d1.d_date_sk = ss_sold_date_sk
-  AND i_item_sk = ss_item_sk
-  AND s_store_sk = ss_store_sk
-  AND ss_customer_sk = sr_customer_sk
+FROM store_sales
+JOIN store ON s_store_sk = ss_store_sk
+JOIN item ON i_item_sk = ss_item_sk
+JOIN date_dim AS d1 ON d1.d_date_sk = ss_sold_date_sk
+JOIN store_returns ON ss_customer_sk = sr_customer_sk
   AND ss_item_sk = sr_item_sk
   AND ss_ticket_number = sr_ticket_number
-  AND sr_returned_date_sk = d2.d_date_sk
-  AND d2.d_quarter_name IN ('1999Q1', '1999Q2', '1999Q3')
-  AND sr_customer_sk = cs_bill_customer_sk
+JOIN date_dim AS d2 ON sr_returned_date_sk = d2.d_date_sk
+JOIN catalog_sales ON sr_customer_sk = cs_bill_customer_sk
   AND sr_item_sk = cs_item_sk
-  AND cs_sold_date_sk = d3.d_date_sk
+JOIN date_dim AS d3 ON cs_sold_date_sk = d3.d_date_sk
+WHERE
+  d1.d_quarter_name = '1999Q1'
+  AND d2.d_quarter_name IN ('1999Q1', '1999Q2', '1999Q3')
   AND d3.d_quarter_name IN ('1999Q1', '1999Q2', '1999Q3')
 GROUP BY
   i_item_id,

@@ -1,7 +1,10 @@
 SELECT
   s_store_name,
   SUM(ss_net_profit)
-FROM store_sales, date_dim, store, (
+FROM store_sales
+JOIN date_dim ON ss_sold_date_sk = d_date_sk
+JOIN store ON ss_store_sk = s_store_sk
+JOIN (
   SELECT
     ca_zip
   FROM (
@@ -17,26 +20,16 @@ FROM store_sales, date_dim, store, (
       SELECT
         SUBSTR(ca_zip, 1, 5) AS ca_zip,
         COUNT(*) AS cnt
-      FROM customer_address, customer
-      WHERE
-        ca_address_sk = c_current_addr_sk AND c_preferred_cust_flag = 'Y'
-      GROUP BY
-        ca_zip
-      HAVING
-        COUNT(*) > 10
+      FROM customer_address
+      JOIN customer ON ca_address_sk = c_current_addr_sk
+      WHERE c_preferred_cust_flag = 'Y'
+      GROUP BY ca_zip
+      HAVING COUNT(*) > 10
     ) AS A1
   ) AS A2
-) AS V1
-WHERE
-  ss_store_sk = s_store_sk
-  AND ss_sold_date_sk = d_date_sk
-  AND d_qoy = 1
+) AS V1 ON SUBSTR(s_zip, 1, 2) = SUBSTR(V1.ca_zip, 1, 2)
+WHERE d_qoy = 1
   AND d_year = 2002
-  AND (
-    SUBSTR(s_zip, 1, 2) = SUBSTR(V1.ca_zip, 1, 2)
-  )
-GROUP BY
-  s_store_name
-ORDER BY
-  s_store_name
+GROUP BY s_store_name
+ORDER BY s_store_name
 LIMIT 100

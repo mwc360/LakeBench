@@ -17,11 +17,10 @@ SELECT
     s_phone,
     total_revenue
 FROM
-    supplier,
-    revenue0
+    supplier
+    INNER JOIN revenue0 ON s_suppkey = supplier_no
 WHERE
-    s_suppkey = supplier_no
-    AND total_revenue = (
+    total_revenue = (
         SELECT
             MAX(total_revenue)
         FROM

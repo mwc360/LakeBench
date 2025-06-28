@@ -2,13 +2,11 @@ SELECT
     ps_partkey,
     SUM(ps_supplycost * ps_availqty) AS value
 FROM
-    partsupp,
-    supplier,
-    nation
+    partsupp
+    INNER JOIN supplier ON ps_suppkey = s_suppkey
+    INNER JOIN nation ON s_nationkey = n_nationkey
 WHERE
-    ps_suppkey = s_suppkey
-    AND s_nationkey = n_nationkey
-    AND n_name = 'CHINA'
+    n_name = 'CHINA'
 GROUP BY
     ps_partkey
 HAVING
@@ -16,13 +14,11 @@ HAVING
         SELECT
             SUM(ps_supplycost * ps_availqty) * 0.0000001000
         FROM
-            partsupp,
-            supplier,
-            nation
+            partsupp
+            INNER JOIN supplier ON ps_suppkey = s_suppkey
+            INNER JOIN nation ON s_nationkey = n_nationkey
         WHERE
-            ps_suppkey = s_suppkey
-            AND s_nationkey = n_nationkey
-            AND n_name = 'CHINA'
+            n_name = 'CHINA'
     )
 ORDER BY
     value DESC

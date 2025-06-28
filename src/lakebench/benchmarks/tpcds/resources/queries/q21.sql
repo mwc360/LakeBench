@@ -22,12 +22,12 @@ FROM (
         ELSE 0
       END
     ) AS inv_after
-  FROM inventory, warehouse, item, date_dim
+  FROM inventory
+  JOIN warehouse ON inv_warehouse_sk = w_warehouse_sk
+  JOIN item ON i_item_sk = inv_item_sk
+  JOIN date_dim ON inv_date_sk = d_date_sk
   WHERE
     i_current_price BETWEEN 0.99 AND 1.49
-    AND i_item_sk = inv_item_sk
-    AND inv_warehouse_sk = w_warehouse_sk
-    AND inv_date_sk = d_date_sk
     AND d_date BETWEEN 
       DATE_ADD(CAST('1999-02-01' AS DATE), -30) AND 
       DATE_ADD(CAST('1999-02-01' AS DATE), 30)
@@ -43,4 +43,3 @@ ORDER BY
   w_warehouse_name,
   i_item_id
 LIMIT 100
-

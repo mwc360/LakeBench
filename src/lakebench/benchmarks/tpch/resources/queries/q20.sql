@@ -2,8 +2,8 @@ SELECT
     s_name,
     s_address
 FROM
-    supplier,
-    nation
+    supplier
+    INNER JOIN nation ON s_nationkey = n_nationkey
 WHERE
     s_suppkey IN (
         SELECT
@@ -31,7 +31,6 @@ WHERE
                     AND l_shipdate < CAST('1997-01-01' AS DATE) + INTERVAL '1' YEAR
             )
     )
-    AND s_nationkey = n_nationkey
     AND n_name = 'ALGERIA'
 ORDER BY
     s_name

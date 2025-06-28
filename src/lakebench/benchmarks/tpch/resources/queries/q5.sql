@@ -2,20 +2,14 @@ SELECT
     n_name,
     SUM(l_extendedprice * (1 - l_discount)) AS revenue
 FROM
-    customer,
-    orders,
-    lineitem,
-    supplier,
-    nation,
-    region
+    customer
+    INNER JOIN orders ON c_custkey = o_custkey
+    INNER JOIN lineitem ON l_orderkey = o_orderkey
+    INNER JOIN supplier ON l_suppkey = s_suppkey
+    INNER JOIN nation ON c_nationkey = s_nationkey AND s_nationkey = n_nationkey
+    INNER JOIN region ON n_regionkey = r_regionkey
 WHERE
-    c_custkey = o_custkey
-    AND l_orderkey = o_orderkey
-    AND l_suppkey = s_suppkey
-    AND c_nationkey = s_nationkey
-    AND s_nationkey = n_nationkey
-    AND n_regionkey = r_regionkey
-    AND r_name = 'ASIA'
+    r_name = 'ASIA'
     AND o_orderdate >= CAST('1994-01-01' AS DATE)
     AND o_orderdate < CAST('1994-01-01' AS DATE) + INTERVAL '1' YEAR
 GROUP BY
