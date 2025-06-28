@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lakebench"
-version = "0.1.19"
+version = "0.1.0"
 dependencies = [
     "numpy",
     "pyarrow>=15.0.0",
