@@ -37,9 +37,11 @@ class BaseBenchmark(ABC):
                 'start_datetime': start_datetime,
                 "duration_sec": duration_ms / 1000,
                 'duration_ms': duration_ms,
-                'iteration': iteration
+                'iteration': iteration,
+                'success': success,
+                'error_message': error_message
             }
-            for phase, test_item, start_datetime, duration_ms, iteration in self.timer.results
+            for phase, test_item, start_datetime, duration_ms, iteration, success, error_message in self.timer.results
         ]
 
         if self.save_results:
