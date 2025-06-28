@@ -1,6 +1,5 @@
 from typing import Optional
 from ..base import BaseBenchmark
-from ...utils.timer import timer
 from ...utils.query_utils import transpile_and_qualify_query
 
 from ...engines.base import BaseEngine
@@ -10,6 +9,7 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 
 import importlib.resources
+import posixpath
 
 class _TPC(BaseBenchmark):
     """
@@ -48,19 +48,25 @@ class _TPC(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            query_list: Optional[list],
-            parquet_mount_path: Optional[str],
-            parquet_abfss_path: Optional[str],
-            result_abfss_path: Optional[str],
+            query_list: Optional[list[str]] | None = None,
+            parquet_mount_path: Optional[str] = None,
+            parquet_abfss_path: Optional[str] = None,
+            result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         if query_list is not None:
+            expanded_query_list = []
+            for query in query_list:
+                if query == '*':
+                    expanded_query_list.extend(self.QUERY_REGISTRY)  # Replace '*' with all queries
+                else:
+                    expanded_query_list.append(query)
             query_set = set(query_list)
             if not query_set.issubset(self.QUERY_REGISTRY):
                 unsupported_queries = query_set - set(self.QUERY_REGISTRY)
                 raise ValueError(f"Query list contains unsupported queries: {unsupported_queries}. Supported queries: {self.QUERY_REGISTRY}.")
-            self.query_list = query_list
+            self.query_list = expanded_query_list
         else:
             self.query_list = self.QUERY_REGISTRY
 
@@ -73,7 +79,6 @@ class _TPC(BaseBenchmark):
                 f"No benchmark implementation registered for engine type: {type(engine).__name__} "
                 f"in benchmark '{self.__class__.__name__}'."
             )
-        self.timer = timer
 
         self.engine = engine
         self.scenario_name = scenario_name
@@ -104,9 +109,6 @@ class _TPC(BaseBenchmark):
                 self._run_power_test()
             case _:
                 raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
-            
-        results = self.post_results()
-        return results
     
     def _prepare_schema(self):
         self.engine.create_schema_if_not_exists(drop_before_create=True)
@@ -121,55 +123,34 @@ class _TPC(BaseBenchmark):
     def _run_load_test(self):
         if isinstance(self.engine, Spark):
             self._prepare_schema()
-        with self.timer(f"Loading TPC{self.TPC_BENCHMARK_VARIANT} Tables", self.benchmark_impl):
-            for table_name in self.TABLE_REGISTRY:
-                # TBD: Add test_item logging
+        for table_name in self.TABLE_REGISTRY:
+            with self.timer(phase="Load", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(
-                    parquet_folder_path=f"{self.source_data_path}/{table_name}", 
+                    parquet_folder_path=posixpath.join(self.source_data_path,table_name), 
                     table_name=table_name
                 )
+        self.post_results()
 
     def _run_query_test(self):
-        with self.timer(f"Running TPC{self.TPC_BENCHMARK_VARIANT} Queries", self.benchmark_impl):
-            if isinstance(self.engine, (DuckDB, Daft, Polars)):
-                for table_name in self.TABLE_REGISTRY:
-                    self.engine.register_table(table_name)
-            for query_name in self.query_list:
-                with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.queries", f'{query_name}.sql') as query_path:
-                    with open(query_path, 'r') as query_file:
-                        query = query_file.read()
+        if isinstance(self.engine, (DuckDB, Daft, Polars)):
+            for table_name in self.TABLE_REGISTRY:
+                self.engine.register_table(table_name)
+        for query_name in self.query_list:
+            with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.queries", f'{query_name}.sql') as query_path:
+                with open(query_path, 'r') as query_file:
+                    query = query_file.read()
 
-                prepped_query = transpile_and_qualify_query(
-                    query=query, 
-                    from_dialect='spark', 
-                    to_dialect=self.engine.SQLGLOT_DIALECT, 
-                    catalog=self.engine.catalog_name,
-                    schema=self.engine.schema_name
-                    )
-                #  TBD: Add test_item logging
+            prepped_query = transpile_and_qualify_query(
+                query=query, 
+                from_dialect='spark', 
+                to_dialect=self.engine.SQLGLOT_DIALECT, 
+                catalog=self.engine.catalog_name,
+                schema=self.engine.schema_name
+                )
+            with self.timer(phase="Query", test_item=query_name, engine=self.engine):
                 execute_query = self.engine.execute_sql_query(prepped_query)
+        self.post_results()
 
     def _run_power_test(self):
         self._run_load_test()
         self._run_query_test()
-
-    def post_results(self):
-        result_array = []
-        for phase, duration_ms in self.timer.results:
-            result_array.append({
-                "phase": phase,
-                "duration_sec": duration_ms / 1000,  # Convert ms to seconds
-                "duration_ms": duration_ms,
-                "engine": type(self.engine).__name__,
-                "scenario": self.scenario_name,
-                "cores": self.engine.get_total_cores()
-            })
-
-        if self.save_results:
-            if self.result_abfss_path is None:
-                raise ValueError("result_abfss_path must be provided if save_results is True.")
-            else:
-                self.engine.append_array_to_delta(self.result_abfss_path, result_array)
-
-        self.timer.clear_results()
-        return result_array

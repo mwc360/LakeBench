@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bench_lake"
-version = "0.1.11"
+name = "lakebench"
+version = "0.1.16"
 dependencies = [
     "numpy",
     "pyarrow>=15.0.0",
@@ -24,7 +24,7 @@ include-package-data = true
 
 [tool.setuptools.package-data]
 # Include SQL files src directory
-"" = ["*.sql"]
+"lakebench" = ["**/*.sql"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

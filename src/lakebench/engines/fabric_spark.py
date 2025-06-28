@@ -21,9 +21,9 @@ class FabricSpark(Spark):
         """
         Initialize the SparkEngine with a Spark session.
         """
-
         self.lakehouse_name = lakehouse_name
         self.lakehouse_schema_name = lakehouse_schema_name
         self.lakehouse_workspace_name = lakehouse_workspace_name
-        super().__init__(catalog_name=lakehouse_name, schema_name=lakehouse_schema_name, spark_measure_telemetry=spark_measure_telemetry)
+
+        super().__init__(catalog_name=self.lakehouse_name, schema_name=self.lakehouse_schema_name, spark_measure_telemetry=spark_measure_telemetry)
 

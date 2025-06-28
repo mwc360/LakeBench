@@ -13,7 +13,7 @@ WITH inv AS (
       w_warehouse_sk,
       i_item_sk,
       d_moy,
-      STDDEV_SAMP(inv_quantity_on_hand) AS stdev,
+      STDDEV(inv_quantity_on_hand) AS stdev,
       AVG(inv_quantity_on_hand) AS mean
     FROM inventory, item, warehouse, date_dim
     WHERE

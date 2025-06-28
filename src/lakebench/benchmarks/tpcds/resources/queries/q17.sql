@@ -4,16 +4,16 @@ SELECT
   s_state,
   COUNT(ss_quantity) AS store_sales_quantitycount,
   AVG(ss_quantity) AS store_sales_quantityave,
-  STDDEV_SAMP(ss_quantity) AS store_sales_quantitystdev,
-  STDDEV_SAMP(ss_quantity) / AVG(ss_quantity) AS store_sales_quantitycov,
+  STDDEV(ss_quantity) AS store_sales_quantitystdev,
+  STDDEV(ss_quantity) / AVG(ss_quantity) AS store_sales_quantitycov,
   COUNT(sr_return_quantity) AS store_returns_quantitycount,
   AVG(sr_return_quantity) AS store_returns_quantityave,
-  STDDEV_SAMP(sr_return_quantity) AS store_returns_quantitystdev,
-  STDDEV_SAMP(sr_return_quantity) / AVG(sr_return_quantity) AS store_returns_quantitycov,
+  STDDEV(sr_return_quantity) AS store_returns_quantitystdev,
+  STDDEV(sr_return_quantity) / AVG(sr_return_quantity) AS store_returns_quantitycov,
   COUNT(cs_quantity) AS catalog_sales_quantitycount,
   AVG(cs_quantity) AS catalog_sales_quantityave,
-  STDDEV_SAMP(cs_quantity) AS catalog_sales_quantitystdev,
-  STDDEV_SAMP(cs_quantity) / AVG(cs_quantity) AS catalog_sales_quantitycov
+  STDDEV(cs_quantity) AS catalog_sales_quantitystdev,
+  STDDEV(cs_quantity) / AVG(cs_quantity) AS catalog_sales_quantitycov
 FROM store_sales, store_returns, catalog_sales, date_dim AS d1, date_dim AS d2, date_dim AS d3, store, item
 WHERE
   d1.d_quarter_name = '1999Q1'

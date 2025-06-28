@@ -49,7 +49,7 @@ LEFT OUTER JOIN catalog_returns
 WHERE
   d1.d_week_seq = d2.d_week_seq
   AND inv_quantity_on_hand < cs_quantity
-  AND d3.d_date > d1.d_date + 5
+  AND d3.d_date > DATE_ADD(d1.d_date, 5)
   AND hd_buy_potential = '>10000'
   AND d1.d_year = 2000
   AND cd_marital_status = 'S'

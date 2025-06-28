@@ -15,6 +15,10 @@ class BaseEngine(ABC):
         cores = os.cpu_count()
         return cores
     
+    def get_compute_size(self):
+        cores = self.get_total_cores()
+        return f"{cores}vCore"
+    
     def append_array_to_delta(self, abfss_path: str, array: list):
         """
         Append an array to a Delta table.

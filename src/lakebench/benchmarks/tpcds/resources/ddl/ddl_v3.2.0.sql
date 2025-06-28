@@ -217,7 +217,7 @@ create table customer (
     c_birth_country varchar(20),
     c_login char(13),
     c_email_address char(50),
-    c_last_review_date_sk integer
+    c_last_review_date char(7)
 );
 
 create table web_site (
@@ -335,7 +335,7 @@ create table inventory (
     inv_date_sk integer not null,
     inv_item_sk integer not null,
     inv_warehouse_sk integer not null,
-    inv_quantity_on_hand bigint
+    inv_quantity_on_hand integer
 );
 
 create table catalog_returns (

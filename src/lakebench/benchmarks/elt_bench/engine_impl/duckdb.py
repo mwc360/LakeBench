@@ -1,6 +1,8 @@
 from ....engines.duckdb import DuckDB
 from ....engines.delta_rs import DeltaRs
 
+import posixpath
+
 class DuckDBELTBench:
     def __init__(self, engine : DuckDB):
         self.engine = engine
@@ -13,7 +15,7 @@ class DuckDBELTBench:
         self.engine.duckdb.sql("use main")
 
         for table in ['store_sales', 'date_dim', 'store', 'item', 'customer']:
-            self.engine.duckdb.sql(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM delta_scan('{self.engine.delta_abfss_schema_path}/{table}')")
+            self.engine.register_table(table)
 
         arrow_df = self.engine.duckdb.sql("""
         SELECT 
@@ -44,7 +46,7 @@ class DuckDBELTBench:
         """).record_batch()
 
         self.write_deltalake(
-            f"{self.engine.delta_abfss_schema_path}/total_sales_fact/",
+            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
             arrow_df,
             mode="overwrite",
             engine='pyarrow'
@@ -54,7 +56,7 @@ class DuckDBELTBench:
         self.engine.duckdb.sql("use main")
 
         for table in ['store_sales', 'date_dim', 'store', 'item', 'customer']:
-            self.engine.duckdb.sql(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM delta_scan('{self.engine.delta_abfss_schema_path}/{table}')")
+            self.engine.register_table(table)
 
         percent_str = f"{percent * 100:.1f}%"
 
@@ -80,7 +82,7 @@ class DuckDBELTBench:
 
         """).record_batch()
 
-        fact_table = self.DeltaTable(f"{self.engine.delta_abfss_schema_path}/total_sales_fact/")
+        fact_table = self.DeltaTable(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
 
         fact_table.merge(
                 source=synthetic_data,
@@ -116,5 +118,5 @@ class DuckDBELTBench:
     def query_total_sales_fact(self):
         df = self.engine.duckdb.sql(f"""
             select sum(total_net_profit), year(sale_date) 
-            from delta_scan('{self.engine.delta_abfss_schema_path}/total_sales_fact/') group by year(sale_date)
+            from delta_scan('{posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact')}') group by year(sale_date)
         """).df()
