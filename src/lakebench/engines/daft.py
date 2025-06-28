@@ -10,7 +10,7 @@ class Daft(BaseEngine):
     """
     Daft Engine for ELT Benchmarks.
     """
-    SQLGLOT_DIALECT = "duckdb"
+    SQLGLOT_DIALECT = "mysql"
     REQUIRED_READ_ENDPOINT = "mount"
     REQUIRED_WRITE_ENDPOINT = "abfss"
 
@@ -44,7 +44,7 @@ class Daft(BaseEngine):
         Register a Delta table DataFrame in Daft.
         """
         globals()[table_name] = self.daft.read_deltalake(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            posixpath.join(self.delta_mount_schema_path, table_name)
         )
 
     def execute_sql_query(self, query: str):
