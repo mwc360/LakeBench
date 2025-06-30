@@ -2,7 +2,47 @@ from .._tpc import _TPC
 
 class TPCDS(_TPC):
     """
-    TPC-DS Benchmark Implementation
+    Class for running the TPC-DS benchmark.
+
+    This class provides functionality for running the TPC-DS benchmark, including loading data,
+    executing queries, and performing power tests. Supported engines are listed in the 
+    `self.BENCHMARK_IMPL_REGISTRY` constant.
+
+    Parameters
+    ----------
+    engine : object
+        The engine to use for executing the benchmark.
+    scenario_name : str
+        The name of the benchmark scenario.
+    query_list : list of str, optional
+        List of queries to execute. Use '*' for all queries. If not specified, all queries will be run.
+    parquet_mount_path : str, optional
+        Path to the mounted parquet files. Must be the root directory containing a folder named after 
+        each table in TABLE_REGISTRY. If not provided, `parquet_abfss_path` must be specified assuming 
+        the engine supports ABFSS.
+    parquet_abfss_path : str, optional
+        Path to the parquet files in ABFSS. Must be the root directory containing a folder named after 
+        each table in TABLE_REGISTRY.
+    result_abfss_path : str, optional
+        ABFSS path to the table where results will be saved. Must be specified if `save_results` is True.
+    save_results : bool
+        Whether to save the benchmark results. Results can also be accessed via the `self.results` 
+        attribute after running the benchmark.
+
+    Methods
+    -------
+    run(mode='power_test')
+        Runs the benchmark in the specified mode.
+        Supported modes are:
+            - 'load': Sequentially executes loading the 24 tables.
+            - 'query': Sequentially executes the 99 queries.
+            - 'power_test': Executes the load test followed by the query test.
+    _run_load_test()
+        Loads the data for the benchmark.
+    _run_query_test()
+        Executes the queries for the benchmark.
+    _run_power_test()
+        Runs both the load and query tests.
     """
     TPC_BENCHMARK_VARIANT = 'DS'
     TABLE_REGISTRY = [

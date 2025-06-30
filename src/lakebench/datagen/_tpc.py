@@ -5,8 +5,8 @@ import importlib.util
 
 class _TPCDataGenerator:
     """
-    TPC Data Generator class.
-    This class is a wrapper of the DuckDB TPC[DS/H] data generation utility.
+    Base class for TPC data generation. PLEASE DO NOT INSTANTIATE THIS CLASS DIRECTLY. Use the TPCHDataGenerator and TPCDSDataGenerator
+    subclasses instead.
     """
     GEN_UTIL = ''
 
@@ -27,7 +27,21 @@ class _TPCDataGenerator:
 
     def run(self):
         """
-        Generate TPC[DS/H] parquet data based on the input scale factor.
+        This method uses DuckDB to generate in-memory tables based on the specified 
+        scale factor and writes them to Parquet files. It estimates the average row 
+        size in MB using a sample of the data since DuckDB only supports specifying 
+        the number of rows per row group. The generated tables are written to the 
+        specified target folder with optimized row group sizes.
+
+        Parameters
+        ----------
+        None
+        
+        Notes
+        -----
+        - The method creates a sample Parquet file for each table to estimate row sizes.
+        - The full table is then written as Parquet files with optimized row group sizes.
+        - Temporary files and in-memory tables are cleaned up after processing.
         """
         import duckdb
         import pyarrow.parquet as pq

@@ -17,8 +17,31 @@ import posixpath
 
 class ELTBench(BaseBenchmark):
     """
-    LightMode: minimal benchmark for quick comparisons.
-    Includes basic ELT actions: load data, simple transforms, incremental processing, maintenance jobs, small query.
+    Class for running the ELTBench benchmark.
+
+    The ELTBench benchmark is designed to evaluate end-to-end performance of engines in supporting typical Lakehouse architecture patterns. This includes bulk loading data, creation of star schema tables, incrementally merging data into tables, performing maintenance jobs, and running ad-hoc aggregation queries. Supported engines are listed in the `self.BENCHMARK_IMPL_REGISTRY` constant. ELTBench supports two modes: 'light' and 'full'. The 'light' mode represents a small workload, while the 'full' mode includes a larger scope of tests.
+
+    Parameters
+    ----------
+    engine : BaseEngine
+        The engine to use for executing the benchmark.
+    scenario_name : str
+        The name of the benchmark scenario.
+    tpcds_parquet_mount_path : str, optional
+        Path to the mounted TPC-DS parquet files. Must be the root directory containing a folder named after each table in TABLE_REGISTRY. If not provided, `tpcds_parquet_abfss_path` must be specified assuming the engine supports ABFSS.
+    tpcds_parquet_abfss_path : str, optional
+        Path to the parquet files in ABFSS. Must be the root directory containing a folder named after each table in TABLE_REGISTRY.
+    result_abfss_path : str, optional
+        ABFSS path to the table where results will be saved. Must be specified if `save_results` is True.
+    save_results : bool, optional
+        Whether to save the benchmark results. Results can also be accessed via the `self.results` attribute after running the benchmark.
+
+    Methods
+    -------
+    run(mode='light')
+        Runs the benchmark in the specified mode. Valid modes are 'light' and 'full'.
+    run_light_mode()
+        Executes the 'light' mode of the benchmark, including data loading, table creation, incremental merging, maintenance jobs, and ad-hoc queries.
     """
 
     BENCHMARK_IMPL_REGISTRY = {
@@ -89,6 +112,16 @@ class ELTBench(BaseBenchmark):
                 self.source_data_path = tpcds_parquet_abfss_path or tpcds_parquet_mount_path
 
     def run(self, mode: str = 'light'):
+        """
+        Executes the benchmark in the specified mode.
+        
+        Parameters
+        ----------
+        mode : str, optional
+            The mode in which to run the benchmark. Supported modes are:
+            - 'light': Runs the benchmark in light mode.
+            - 'full': Placeholder for full mode, which is not implemented yet.
+        """
 
         match mode:
             case 'light':
@@ -99,6 +132,17 @@ class ELTBench(BaseBenchmark):
                 raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
 
     def run_light_mode(self):
+        """
+        Executes the light mode benchmark workflow for processing and querying data.
+        This method performs a series of operations on data tables, including loading data 
+        from parquet files into Delta tables, creating a fact table, merging data, optimizing 
+        the table, vacuuming the table, and running an ad-hoc query. The results are posted 
+        at the end of the workflow.
+
+        Parameters
+        ----------
+        None
+        """
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(

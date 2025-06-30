@@ -1,4 +1,5 @@
 from .base import BaseEngine
+import os
 
 class Spark(BaseEngine):
     """
@@ -48,29 +49,42 @@ class Spark(BaseEngine):
         df = self.spark.createDataFrame(array).select(*columns)
         df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
 
-    def get_total_cores(self):
-        import os 
-        cores = len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos())) * os.cpu_count()
+    def get_total_cores(self) -> int:
+        """
+        Returns the total number of CPU cores available in the Spark cluster.
+        
+        Assumes that the driver and workers nodes are all the same VM size.
+        """
+        cores = int(len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos())) * os.cpu_count())
         return cores
     
-    def get_compute_size(self):
-        import os 
+    def get_compute_size(self) -> str:
+        """
+        Returns a formatted string with the compute size.
+        
+        Assumes that the driver and workers nodes are all the same VM size.
+        """        
         sc_conf_dict = {key: value for key, value in self.spark.sparkContext.getConf().getAll()}
-        workers = self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size() - 1
-        worker_cores = int(sc_conf_dict.get('spark.executor.cores'))
-        executor_hosts = set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos())
+        executor_count = self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size() - 1
+        executor_cores = int(sc_conf_dict.get('spark.executor.cores'))
+        vm_host_count = len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
+        worker_count = vm_host_count - 1
+        worker_cores = os.cpu_count()
         as_min_workers = sc_conf_dict['spark.dynamicAllocation.initialExecutors'] if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
         as_max_workers = sc_conf_dict['spark.dynamicAllocation.maxExecutors'] if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
-        as_enabled = True if as_min_workers != as_max_workers else False
-        type = "SingleNode" if len(executor_hosts) == 1 and not as_enabled else 'MultiNode'
+        as_enabled = True if as_min_workers != as_max_workers and sc_conf_dict.get('spark.dynamicAllocation.minExecutors', None) != sc_conf_dict.get('spark.dynamicAllocation.maxExecutors', None) else False
+        type = "SingleNode" if vm_host_count == 1 and not as_enabled else 'MultiNode'
+        workers_word = 'Workers' if worker_count > 1 or int(as_max_workers) > 1  else 'Worker'
+        executors_per_worker = int(executor_count / worker_count) if worker_count > 0 else 1
+        executors_word = 'Executors' if executors_per_worker > 1 else 'Executor'
+        executor_str = f"({executors_per_worker} x {executor_cores}vCore {executors_word}{' ea.' if type != 'SingleNode' else ''})"
 
-        workers_str = 'Workers' if workers > 1 or int(as_max_workers) > 1  else 'Worker'
         if type == 'SingleNode':
-            cluster_config = f"{os.cpu_count()}vCore {type} ({worker_cores} Executor Cores)"
+            cluster_config = f"{worker_cores}vCore {type} {executor_str}"
         elif as_enabled:
-            cluster_config = f"{as_min_workers}-{as_max_workers} x {worker_cores}vCore {workers_str}"
+            cluster_config = f"{as_min_workers}-{as_max_workers} x {worker_cores}vCore {workers_word} {executor_str}"
         else:
-            cluster_config = f"{workers} x {worker_cores}vCores {workers_str}"
+            cluster_config = f"{worker_count} x {worker_cores}vCore {workers_word} {executor_str}"
 
         return cluster_config
     

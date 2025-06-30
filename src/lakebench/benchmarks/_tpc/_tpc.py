@@ -13,6 +13,8 @@ import posixpath
 
 class _TPC(BaseBenchmark):
     """
+    Base class for TPC benchmarks. PLEASE DO NOT INSTANTIATE THIS CLASS DIRECTLY. Use the TPCH and TPCDS 
+    subclasses instead.
     """
     BENCHMARK_IMPL_REGISTRY = {
         Spark: None,
@@ -100,6 +102,21 @@ class _TPC(BaseBenchmark):
                 self.source_data_path = parquet_abfss_path or parquet_mount_path
 
     def run(self, mode: str = 'power_test'):
+        """
+        Executes a specific test mode based on the provided mode string.
+
+        Parameters
+        ----------
+        mode : str, optional
+            The mode of the test to run. Supported modes are:
+            - 'load': Executes the load test.
+            - 'query': Executes the query test.
+            - 'power_test': Executes the power test (default).
+
+        Notes
+        -----
+        The `MODE_REGISTRY` attribute contains the list of supported modes.
+        """
         match mode:
             case 'load':
                 self._run_load_test()
@@ -111,6 +128,20 @@ class _TPC(BaseBenchmark):
                 raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
     
     def _prepare_schema(self):
+        """
+        Prepares the database schema for the TPC benchmark.
+        This method creates the schema if it does not exist, optionally dropping it before creation.
+        It then reads the DDL (Data Definition Language) file associated with the specific TPC benchmark variant,
+        parses the SQL statements, and executes them to set up the schema.
+
+        Parameters
+        ----------
+        None
+
+        Notes
+        -----
+        - The DDL file is expected to be located in the `resources.ddl` directory corresponding to the TPC benchmark variant.
+        """
         self.engine.create_schema_if_not_exists(drop_before_create=True)
         with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.ddl", self.DDL_FILE_NAME) as ddl_path:
             with open(ddl_path, 'r') as ddl_file:
@@ -121,6 +152,23 @@ class _TPC(BaseBenchmark):
             self.engine.execute_sql_statement(statement)
 
     def _run_load_test(self):
+        """
+        Executes the load test by loading data from Parquet files into Delta tables 
+        for all tables registered in the `TABLE_REGISTRY`. This method also measures 
+        the time taken for each table load operation and records the results.
+
+        Parameters
+        ----------
+        None
+
+        Notes
+        -----
+        - If the engine is an instance of `Spark`, the schema is prepared before 
+          loading the data.
+        - The method uses a timer to measure the duration of the load operation 
+          for each table.
+        - Results are posted after all tables have been processed.
+        """
         if isinstance(self.engine, Spark):
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
@@ -132,6 +180,23 @@ class _TPC(BaseBenchmark):
         self.post_results()
 
     def _run_query_test(self):
+        """
+        Executes a series of SQL queries for benchmarking purposes.
+        This method registers tables with the engine if the engine is one of 
+        DuckDB, Daft, or Polars. It then iterates through a list of query names, 
+        reads the corresponding SQL files, transpiles the queries to match the 
+        engine's SQL dialect, and executes them while measuring execution time.
+        The results are processed and stored after all queries are executed.
+
+        Parameters
+        ----------
+        None
+
+        Notes
+        -----
+        - This method assumes the SQL files are located in a specific directory 
+          structure based on the TPC benchmark variant.
+        """
         if isinstance(self.engine, (DuckDB, Daft, Polars)):
             for table_name in self.TABLE_REGISTRY:
                 self.engine.register_table(table_name)
@@ -152,5 +217,13 @@ class _TPC(BaseBenchmark):
         self.post_results()
 
     def _run_power_test(self):
+        """
+        Executes the power test by running both the load test and the query test.
+
+        This method is responsible for orchestrating the execution of the power test,
+        which includes two main components:
+        1. Load Test: Prepares the system by loading necessary data.
+        2. Query Test: Executes a series of queries to evaluate system performance.
+        """
         self._run_load_test()
         self._run_query_test()
