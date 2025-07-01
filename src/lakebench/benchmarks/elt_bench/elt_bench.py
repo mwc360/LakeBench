@@ -86,9 +86,11 @@ class ELTBench(BaseBenchmark):
             )
         
         if isinstance(engine, Daft):
-            if tpcds_parquet_mount_path is None:
-                raise ValueError("parquet_mount_path must be provided for Daft engine.")
-        self.source_data_path = tpcds_parquet_mount_path or tpcds_parquet_abfss_path
+            if tpcds_parquet_abfss_path is None:
+                raise ValueError("tpcds_parquet_abfss_path must be provided for Daft engine.")
+            self.source_data_path = tpcds_parquet_abfss_path
+        else:
+            self.source_data_path = tpcds_parquet_mount_path or tpcds_parquet_abfss_path
         self.engine = engine
         self.scenario_name = scenario_name
         self.benchmark_impl = self.benchmark_impl_class(
@@ -146,7 +148,7 @@ class ELTBench(BaseBenchmark):
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(
-                    parquet_folder_path=posixpath.join(self.source_data_path, table_name), 
+                    parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
                     table_name=table_name
                 )
         with self.timer(phase="Create fact table", test_item='total_sales_fact', engine=self.engine):

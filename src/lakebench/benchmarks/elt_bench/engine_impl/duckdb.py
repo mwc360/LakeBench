@@ -48,8 +48,7 @@ class DuckDBELTBench:
         self.write_deltalake(
             posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
             arrow_df,
-            mode="overwrite",
-            engine='pyarrow'
+            mode="overwrite"
         )
 
     def merge_percent_into_total_sales_fact(self, percent: float):

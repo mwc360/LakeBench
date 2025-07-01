@@ -10,6 +10,7 @@ class DuckDB(BaseEngine):
     SQLGLOT_DIALECT = "duckdb"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
+    SUPPORTS_ONELAKE = True
 
     def __init__(
             self, 
@@ -30,8 +31,7 @@ class DuckDB(BaseEngine):
         self.deltars.write_deltalake(
             posixpath.join(self.delta_abfss_schema_path, table_name),
             arrow_df,
-            mode="overwrite",
-            engine='pyarrow'
+            mode="overwrite"
         )  
 
     def register_table(self, table_name: str):

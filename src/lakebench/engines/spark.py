@@ -8,6 +8,7 @@ class Spark(BaseEngine):
     SQLGLOT_DIALECT = "spark"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = None
+    SUPPORTS_ONELAKE = True
 
     def __init__(
             self,

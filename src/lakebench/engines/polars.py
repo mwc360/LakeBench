@@ -13,6 +13,7 @@ class Polars(BaseEngine):
     SQLGLOT_DIALECT = "duckdb"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
+    SUPPORTS_ONELAKE = True
 
     def __init__(
             self, 

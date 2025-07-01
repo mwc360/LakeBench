@@ -68,6 +68,5 @@ class BaseEngine(ABC):
         DeltaRs().write_deltalake(
             abfss_path, 
             results_table, 
-            mode="append",
-            engine="rust"
+            mode="append"
         )

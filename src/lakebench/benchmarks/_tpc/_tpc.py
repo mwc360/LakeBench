@@ -174,7 +174,7 @@ class _TPC(BaseBenchmark):
         for table_name in self.TABLE_REGISTRY:
             with self.timer(phase="Load", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(
-                    parquet_folder_path=posixpath.join(self.source_data_path,table_name), 
+                    parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
                     table_name=table_name
                 )
         self.post_results()
