@@ -27,7 +27,7 @@ class DuckDB(BaseEngine):
         self.schema_name = None
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
-        arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()
+        arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).fetch_arrow_reader()
         self.deltars.write_deltalake(
             posixpath.join(self.delta_abfss_schema_path, table_name),
             arrow_df,
