@@ -1,9 +1,6 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
-from IPython.core.getipython import get_ipython
-notebookutils = get_ipython().user_ns.get("notebookutils")
-
 import posixpath
 
 class Polars(BaseEngine):
@@ -27,7 +24,7 @@ class Polars(BaseEngine):
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.storage_options={
-            "bearer_token": notebookutils.credentials.getToken('storage')
+            "bearer_token": self.notebookutils.credentials.getToken('storage')
         }
         self.catalog_name = None
         self.schema_name = None

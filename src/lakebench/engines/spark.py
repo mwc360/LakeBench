@@ -92,7 +92,7 @@ class Spark(BaseEngine):
     
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         df = self.spark.read.parquet(parquet_folder_path)
-        df.write.mode("append").saveAsTable(table_name)
+        df.write.format('delta').mode("append").saveAsTable(table_name)
     
     def execute_sql_query(self, query: str):
         execute_sql = self.spark.sql(query).collect()

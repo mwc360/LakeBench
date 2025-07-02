@@ -1,9 +1,6 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
-from IPython.core.getipython import get_ipython
-notebookutils = get_ipython().user_ns.get("notebookutils")
-
 import posixpath
 
 class Daft(BaseEngine):
@@ -29,7 +26,7 @@ class Daft(BaseEngine):
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
-        access_token = notebookutils.credentials.getToken('storage')
+        access_token = self.notebookutils.credentials.getToken('storage')
         io_config = IOConfig(azure=AzureConfig(bearer_token=access_token))
 
         self.daft.set_planning_config(default_io_config=io_config)
