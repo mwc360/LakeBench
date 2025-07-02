@@ -80,19 +80,22 @@ class PolarsELTBench:
             )
             .with_columns([
                 # Create hash-based pseudo-random values for each row
-                ((self.engine.pl.col("ss_customer_sk") + self.engine.pl.col("ss_sold_date_sk") + seed).hash()).alias("hash_val")
+                (self.engine.pl.col("ss_customer_sk") + self.engine.pl.col("ss_sold_date_sk") + seed).alias("new_uid_val")
             ])
+            .filter(
+                (self.engine.pl.col("new_uid_val") % modulo) == 0
+            )
             .with_columns([
                 self.engine.pl.col("s_store_id"),
                 self.engine.pl.col("i_item_id"),
-                self.engine.pl.when(self.engine.pl.col("hash_val") % 2 == 0)
+                self.engine.pl.when(self.engine.pl.col("new_uid_val") % 2 == 0)
                     .then(self.engine.pl.col("c_customer_id"))
-                    .otherwise((self.engine.pl.col("hash_val") % 10000).cast(self.engine.pl.Utf8))
+                    .otherwise(self.engine.pl.concat_str([self.engine.pl.lit('NEW_'), self.engine.pl.col("new_uid_val")], separator=''))
                     .alias("c_customer_id"),
                 self.engine.pl.col("d_date").alias("sale_date"),
-                (self.engine.pl.col("ss_quantity") + (self.engine.pl.col("hash_val") % 5) + 1).alias("total_quantity"),
-                (self.engine.pl.col("ss_net_paid") + ((self.engine.pl.col("hash_val") % 5000) / 100.0) + 5).alias("total_net_paid"),
-                (self.engine.pl.col("ss_net_profit") + ((self.engine.pl.col("hash_val") % 2000) / 100.0) + 1).alias("total_net_profit")
+                (self.engine.pl.col("ss_quantity") + (self.engine.pl.col("new_uid_val") % 5) + 1).alias("total_quantity"),
+                (self.engine.pl.col("ss_net_paid") + ((self.engine.pl.col("new_uid_val") % 5000) / 100.0) + 5).alias("total_net_paid"),
+                (self.engine.pl.col("ss_net_profit") + ((self.engine.pl.col("new_uid_val") % 2000) / 100.0) + 1).alias("total_net_profit")
             ])
             .select([
                 "s_store_id",

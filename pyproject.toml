@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: System :: Benchmark",
 ]
 dependencies = [
-    "numpy",
+    "numpy>=1.26.4",
     "pyarrow>=15.0.0",
     "sqlglot==26.30.0"
 ]
