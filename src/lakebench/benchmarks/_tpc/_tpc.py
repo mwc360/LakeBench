@@ -147,6 +147,16 @@ class _TPC(BaseBenchmark):
             
         statements = [s for s in ddl.split(';') if len(s) > 7]
         for statement in statements:
+            if 'using ' not in statement.lower():
+                # Find the closing parenthesis of the column definitions
+                closing_paren_index = statement.rfind(")")
+                if closing_paren_index != -1:
+                    # Insert 'USING delta' after the closing parenthesis
+                    statement = (
+                        statement[:closing_paren_index + 1]
+                        + " using delta"
+                        + statement[closing_paren_index + 1:]
+                    )
             self.engine.execute_sql_statement(statement)
 
     def _run_load_test(self):

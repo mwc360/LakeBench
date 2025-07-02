@@ -10,7 +10,7 @@ class SparkELTBench:
 
     def create_total_sales_fact(self):
         self.engine.spark.sql("""
-            CREATE OR REPLACE TABLE total_sales_fact AS
+            CREATE OR REPLACE TABLE total_sales_fact USING DELTA AS
             SELECT 
                 s.s_store_id,
                 i.i_item_id,
