@@ -1,4 +1,5 @@
 from abc import ABC
+import posixpath
 
 class BaseEngine(ABC):
     """
@@ -28,7 +29,11 @@ class BaseEngine(ABC):
     REQUIRED_WRITE_ENDPOINT = None
     
     def __init__(self):
-        pass
+        try:
+            from IPython.core.getipython import get_ipython
+            self.notebookutils = get_ipython().user_ns.get("notebookutils")
+        except:
+            pass
                   
     def get_total_cores(self) -> int:
         """
