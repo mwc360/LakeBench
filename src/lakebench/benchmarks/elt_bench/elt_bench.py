@@ -97,21 +97,20 @@ class ELTBench(BaseBenchmark):
             self.engine
         )
 
-        match engine.REQUIRED_READ_ENDPOINT:
-            case 'mount':
-                if tpcds_parquet_mount_path is None:
-                    raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
-                self.source_data_path = tpcds_parquet_mount_path
-            case 'abfss':
-                if tpcds_parquet_abfss_path is None:
-                    raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
-                self.source_data_path = tpcds_parquet_abfss_path
-            case _:
-                if tpcds_parquet_mount_path is None and tpcds_parquet_abfss_path is None:
-                    raise ValueError(
-                        f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
-                    )
-                self.source_data_path = tpcds_parquet_abfss_path or tpcds_parquet_mount_path
+        if engine.REQUIRED_READ_ENDPOINT == 'mount':
+            if tpcds_parquet_mount_path is None:
+                raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
+            self.source_data_path = tpcds_parquet_mount_path
+        elif engine.REQUIRED_READ_ENDPOINT == 'abfss':
+            if tpcds_parquet_abfss_path is None:
+                raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
+            self.source_data_path = tpcds_parquet_abfss_path
+        else:
+            if tpcds_parquet_mount_path is None and tpcds_parquet_abfss_path is None:
+                raise ValueError(
+                    f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
+                )
+            self.source_data_path = tpcds_parquet_abfss_path or tpcds_parquet_mount_path
 
     def run(self, mode: str = 'light'):
         """
@@ -125,13 +124,12 @@ class ELTBench(BaseBenchmark):
             - 'full': Placeholder for full mode, which is not implemented yet.
         """
 
-        match mode:
-            case 'light':
-                self.run_light_mode()
-            case 'full':
-                raise NotImplementedError("Full mode is not implemented yet.")
-            case _:
-                raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
+        if mode == 'light':
+            self.run_light_mode()
+        elif mode == 'full':
+            raise NotImplementedError("Full mode is not implemented yet.")
+        else:
+            raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
 
     def run_light_mode(self):
         """

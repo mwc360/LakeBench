@@ -1,5 +1,6 @@
 from .base import BaseEngine
 import os
+from typing import Optional
 
 class Spark(BaseEngine):
     """
@@ -12,7 +13,7 @@ class Spark(BaseEngine):
 
     def __init__(
             self,
-            catalog_name: str | None,
+            catalog_name: Optional[str],
             schema_name: str,
             spark_measure_telemetry: bool = False
             ):
