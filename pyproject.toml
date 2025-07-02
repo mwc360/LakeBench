@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lakebench"
-version = "0.1.6"
+version = "0.1.7"
 authors = [
     { name="Miles Cole" },
 ]
 license = {file = "LICENSE"}
 description = "A multi-modal Python library for benchmarking Azure lakehouse engines and ELT scenarios, supporting both industry-standard and novel benchmarks."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from ..base import BaseBenchmark
 from ...utils.query_utils import transpile_and_qualify_query
 
@@ -50,7 +50,7 @@ class _TPC(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            query_list: Optional[list[str]] | None = None,
+            query_list: Optional[List[str]] = None,
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
             result_abfss_path: Optional[str] = None,
@@ -85,21 +85,20 @@ class _TPC(BaseBenchmark):
         self.engine = engine
         self.scenario_name = scenario_name
 
-        match engine.REQUIRED_READ_ENDPOINT:
-            case 'mount':
-                if parquet_mount_path is None:
-                    raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
-                self.source_data_path = parquet_mount_path
-            case 'abfss':
-                if parquet_abfss_path is None:
-                    raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
-                self.source_data_path = parquet_abfss_path
-            case _:
-                if parquet_mount_path is None and parquet_abfss_path is None:
-                    raise ValueError(
-                        f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
-                    )
-                self.source_data_path = parquet_abfss_path or parquet_mount_path
+        if engine.REQUIRED_READ_ENDPOINT == 'mount':
+            if parquet_mount_path is None:
+                raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
+            self.source_data_path = parquet_mount_path
+        elif engine.REQUIRED_READ_ENDPOINT == 'abfss':
+            if parquet_abfss_path is None:
+                raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
+            self.source_data_path = parquet_abfss_path
+        else:
+            if parquet_mount_path is None and parquet_abfss_path is None:
+                raise ValueError(
+                    f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
+                )
+            self.source_data_path = parquet_abfss_path or parquet_mount_path
 
     def run(self, mode: str = 'power_test'):
         """
@@ -117,15 +116,14 @@ class _TPC(BaseBenchmark):
         -----
         The `MODE_REGISTRY` attribute contains the list of supported modes.
         """
-        match mode:
-            case 'load':
-                self._run_load_test()
-            case 'query':
-                self._run_query_test()
-            case 'power_test':
-                self._run_power_test()
-            case _:
-                raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
+        if mode == 'load':
+            self._run_load_test()
+        elif mode == 'query':
+            self._run_query_test()
+        elif mode == 'power_test':
+            self._run_power_test()
+        else:
+            raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
     
     def _prepare_schema(self):
         """
