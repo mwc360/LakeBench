@@ -3,6 +3,8 @@ from ....engines.spark import Spark
 class SparkELTBench:
     def __init__(self, engine: Spark):
         
+        import numpy as np
+        self.np = np
         self.engine = engine
         self.engine.create_schema_if_not_exists(drop_before_create=True)
 
@@ -36,38 +38,41 @@ class SparkELTBench:
         """)
 
     def merge_percent_into_total_sales_fact(self, percent: float):
-        store_sales = self.engine.spark.table("store_sales")
-        date_dim = self.engine.spark.table("date_dim")
-        store = self.engine.spark.table("store")
-        item = self.engine.spark.table("item")
-        customer = self.engine.spark.table("customer")
+        seed = self.np.random.randint(1, high=1000, size=None, dtype=int)
+        modulo = int(1 / percent)
 
-        sampled_data = store_sales.sample(fraction=percent)
-
-        sampled_fact_data = (
-            sampled_data.join(date_dim, store_sales.ss_sold_date_sk == date_dim.d_date_sk)
-            .join(store, store_sales.ss_store_sk == store.s_store_sk)
-            .join(item, store_sales.ss_item_sk == item.i_item_sk)
-            .join(customer, store_sales.ss_customer_sk == customer.c_customer_sk)
-            .select(
-                store.s_store_id,
-                item.i_item_id,
-                customer.c_customer_id,
-                date_dim.d_date.alias("sale_date"),
-                store_sales.ss_quantity.alias("total_quantity"),
-                store_sales.ss_net_paid.alias("total_net_paid"),
-                store_sales.ss_net_profit.alias("total_net_profit")
-            )
-        )
-
-        synthetic_merge_data = sampled_fact_data \
-            .withColumn("c_customer_id", self.engine.sf.when(self.engine.sf.rand() > 0.5, self.engine.sf.expr("CAST(rand() * 100000 AS INT)")).otherwise(sampled_fact_data.c_customer_id)) \
-            .withColumn("total_quantity", sampled_fact_data.total_quantity + self.engine.sf.expr("floor(rand() * 5 + 1)")) \
-            .withColumn("total_net_paid", sampled_fact_data.total_net_paid + self.engine.sf.expr("rand() * 50 + 5")) \
-            .withColumn("total_net_profit", sampled_fact_data.total_net_profit + self.engine.sf.expr("rand() * 20 + 1"))
+        sampled_fact_data = self.engine.spark.sql(f"""
+            SELECT 
+                s.s_store_id, 
+                i.i_item_id, 
+                CASE 
+                    WHEN rand() > 0.5 THEN 
+                        CONCAT('NEW_', CAST(new_uid_val AS STRING))
+                    ELSE 
+                        c.c_customer_id
+                END AS c_customer_id,
+                d.d_date AS sale_date,
+                ss.ss_quantity + FLOOR(rand() * 5 + 1) AS total_quantity,
+                ss.ss_net_paid + rand() * 50 + 5 AS total_net_paid,
+                ss.ss_net_profit + rand() * 20 + 1 AS total_net_profit
+            FROM (
+                SELECT *, 
+                       ss_customer_sk + ss_sold_date_sk + {seed} AS new_uid_val
+                FROM store_sales
+                WHERE MOD(ss_customer_sk + ss_sold_date_sk + {seed}, {modulo}) = 0
+            ) ss
+            JOIN date_dim d 
+              ON ss.ss_sold_date_sk = d.d_date_sk
+            JOIN store s 
+              ON ss.ss_store_sk = s.s_store_sk
+            JOIN item i 
+              ON ss.ss_item_sk = i.i_item_sk
+            JOIN customer c 
+              ON ss.ss_customer_sk = c.c_customer_sk
+            """)
 
         # Register as a temporary view for SQL-based merge
-        synthetic_merge_data.createOrReplaceTempView("synthetic_merge_data")
+        sampled_fact_data.createOrReplaceTempView("sampled_fact_data")
 
         self.engine.spark.sql("""
             MERGE INTO total_sales_fact AS target
@@ -80,7 +85,7 @@ class SparkELTBench:
                     total_quantity, 
                     total_net_paid, 
                     total_net_profit
-                FROM synthetic_merge_data
+                FROM sampled_fact_data
             ) AS source
             ON 
                 target.s_store_id = source.s_store_id AND 

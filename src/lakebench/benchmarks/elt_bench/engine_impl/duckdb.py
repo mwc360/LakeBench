@@ -7,6 +7,8 @@ class DuckDBELTBench:
     def __init__(self, engine : DuckDB):
         self.engine = engine
 
+        import numpy as np
+        self.np = np
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
@@ -56,22 +58,31 @@ class DuckDBELTBench:
 
         for table in ['store_sales', 'date_dim', 'store', 'item', 'customer']:
             self.engine.register_table(table)
-
-        percent_str = f"{percent * 100:.1f}%"
+            
+        seed = self.np.random.randint(1, high=1000, size=None, dtype=int)
+        modulo = int(1 / percent)
 
         synthetic_data = self.engine.duckdb.sql(f"""
             SELECT 
                 s_store_id, 
                 i_item_id, 
-                case when random() > 0.5 then c_customer_id else CAST(10000 * random() AS string) end AS c_customer_id,
+                CASE 
+                    WHEN random() > 0.5 THEN 
+                        CONCAT('NEW_', new_uid_val)
+                    ELSE 
+                        c.c_customer_id
+                END as c_customer_id,
                 d.d_date as sale_date,
                 ss_quantity + floor(random() * 5 + 1) AS total_quantity,
                 ss_net_paid + random() * 50 + 5 AS total_net_paid,
                 ss_net_profit + random() * 20 + 1 AS total_net_profit
-            FROM 
-                (SELECT * FROM store_sales USING SAMPLE {percent_str}) ss
+            FROM (
+                    SELECT *, ss_customer_sk + ss_sold_date_sk + {seed} AS new_uid_val 
+                    FROM store_sales
+                    WHERE MOD(new_uid_val, {modulo}) = 0
+                ) ss            
             JOIN 
-                date_dim d ON ss.ss_sold_date_sk = d.d_date_sk
+                delta_scan('{posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim')}') d ON ss.ss_sold_date_sk = d.d_date_sk
             JOIN 
                 store s ON ss.ss_store_sk = s.s_store_sk
             JOIN 

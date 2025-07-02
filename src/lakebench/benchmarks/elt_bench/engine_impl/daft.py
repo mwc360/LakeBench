@@ -6,6 +6,8 @@ class DaftELTBench:
     def __init__(self, engine : Daft):
         self.engine = engine
 
+        import numpy as np
+        self.np = np
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
@@ -53,10 +55,13 @@ class DaftELTBench:
 
 
     def merge_percent_into_total_sales_fact(self, percent: float):
+
+        seed = self.np.random.randint(1, high=1000, size=None, dtype=int)
+        modulo = int(1 / percent)
+
         
         sampled_fact_data = (
             self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales/'))
-            .sample(percent)
             .join(
                 self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim/')), 
                 left_on="ss_sold_date_sk", 
@@ -79,22 +84,25 @@ class DaftELTBench:
             )
             .with_columns({
                 # Use hash for pseudo-random values
-                "hash_val": (self.engine.daft.col("ss_customer_sk") + self.engine.daft.col("ss_sold_date_sk")).hash(),
+                "new_uid_val": (self.engine.daft.col("ss_customer_sk") + self.engine.daft.col("ss_sold_date_sk") + seed),
                 "s_store_id": self.engine.daft.col("s_store_id"),
                 "i_item_id": self.engine.daft.col("i_item_id"),
                 "sale_date": self.engine.daft.col("d_date"),
             })
+            .filter(
+                (self.engine.daft.col("new_uid_val") % modulo) == 0
+            )
             .with_columns({
                 "c_customer_id": (
-                    (self.engine.daft.col("hash_val") % 2 == 0)
+                    (self.engine.daft.col("new_uid_val") % 2 == 0)
                     .if_else(
                         self.engine.daft.col("c_customer_id"),
-                        (self.engine.daft.col("hash_val") % 10000).cast(self.engine.daft.DataType.string())
+                        'NEW_' + self.engine.daft.col("new_uid_val").cast(self.engine.daft.DataType.string())
                     )
                 ),
-                "total_quantity": self.engine.daft.col("ss_quantity") + (self.engine.daft.col("hash_val") % 5 + 1),
-                "total_net_paid": (self.engine.daft.col("ss_net_paid") + ((self.engine.daft.col("hash_val") % 5000) / 100.0 + 5)).cast(self.engine.daft.DataType.decimal128(38, 2)),
-                "total_net_profit": (self.engine.daft.col("ss_net_profit") + ((self.engine.daft.col("hash_val") % 2000) / 100.0 + 1)).cast(self.engine.daft.DataType.decimal128(38, 2))
+                "total_quantity": self.engine.daft.col("ss_quantity") + (self.engine.daft.col("new_uid_val") % 5 + 1),
+                "total_net_paid": (self.engine.daft.col("ss_net_paid") + ((self.engine.daft.col("new_uid_val") % 5000) / 100.0 + 5)).cast(self.engine.daft.DataType.decimal128(38, 2)),
+                "total_net_profit": (self.engine.daft.col("ss_net_profit") + ((self.engine.daft.col("new_uid_val") % 2000) / 100.0 + 1)).cast(self.engine.daft.DataType.decimal128(38, 2))
             })
             .select(
                 "s_store_id",

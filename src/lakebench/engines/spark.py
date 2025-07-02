@@ -12,7 +12,7 @@ class Spark(BaseEngine):
 
     def __init__(
             self,
-            catalog_name: str,
+            catalog_name: str | None,
             schema_name: str,
             spark_measure_telemetry: bool = False
             ):
@@ -30,14 +30,14 @@ class Spark(BaseEngine):
 
         self.catalog_name = catalog_name
         self.schema_name = schema_name
-        self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`"
+        self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """
         Prepare an empty schema in the lakehouse.
         """
         if drop_before_create:
-            self.spark.sql(f"DROP SCHEMA IF EXISTS {self.full_catalog_schema_reference}")
+            self.spark.sql(f"DROP SCHEMA IF EXISTS {self.full_catalog_schema_reference} CASCADE")
         self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 

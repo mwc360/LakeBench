@@ -3,6 +3,9 @@ from  .delta_rs import DeltaRs
 
 import posixpath
 
+from IPython.core.getipython import get_ipython
+notebookutils = get_ipython().user_ns.get("notebookutils")
+
 class DuckDB(BaseEngine):
     """
     DuckDB Engine for ELT Benchmarks.
@@ -20,7 +23,8 @@ class DuckDB(BaseEngine):
         Initialize the DuckDB Engine Configs
         """
         import duckdb
-        self.duckdb = duckdb
+        self.duckdb = duckdb.connect()
+        self.duckdb.sql(f""" CREATE or replace SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{notebookutils.credentials.getToken('storage')}') ;""")
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
