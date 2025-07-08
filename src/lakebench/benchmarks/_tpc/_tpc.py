@@ -157,7 +157,16 @@ class _TPC(BaseBenchmark):
                         + " using delta"
                         + statement[closing_paren_index + 1:]
                     )
-            self.engine.execute_sql_statement(statement)
+
+            prepped_ddl = transpile_and_qualify_query(
+                query=statement, 
+                from_dialect='spark', 
+                to_dialect=self.engine.SQLGLOT_DIALECT, 
+                catalog=self.engine.catalog_name,
+                schema=self.engine.schema_name
+            )
+            
+            self.engine.execute_sql_statement(prepped_ddl)
 
     def _run_load_test(self):
         """
