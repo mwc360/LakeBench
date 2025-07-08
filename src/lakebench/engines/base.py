@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Optional
 import posixpath
 
 class BaseEngine(ABC):
@@ -27,6 +28,7 @@ class BaseEngine(ABC):
     SQLGLOT_DIALECT = None
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = None
+    SUPPORTS_SCHEMA_PREP = False
     
     def __init__(self):
         try:
@@ -50,7 +52,7 @@ class BaseEngine(ABC):
         cores = self.get_total_cores()
         return f"{cores}vCore"
     
-    def append_array_to_delta(self, abfss_path: str, array: list):
+    def append_array_to_delta(self, abfss_path: str, array: list, schema: Optional[list] = None):
         """
         Appends a list of data to a Delta table at the specified path.
 

@@ -11,6 +11,7 @@ class Daft(BaseEngine):
     REQUIRED_READ_ENDPOINT = "abfss"
     REQUIRED_WRITE_ENDPOINT = "abfss"
     SUPPORTS_ONELAKE = False
+    SUPPORTS_SCHEMA_PREP = False
 
     def __init__(
             self, 

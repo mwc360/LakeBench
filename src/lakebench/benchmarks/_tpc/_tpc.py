@@ -177,7 +177,7 @@ class _TPC(BaseBenchmark):
           for each table.
         - Results are posted after all tables have been processed.
         """
-        if isinstance(self.engine, Spark):
+        if self.engine.SUPPORTS_SCHEMA_PREP:
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
             with self.timer(phase="Load", test_item=table_name, engine=self.engine):

@@ -10,6 +10,7 @@ class DuckDB(BaseEngine):
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
     SUPPORTS_ONELAKE = True
+    SUPPORTS_SCHEMA_PREP = False
 
     def __init__(
             self, 

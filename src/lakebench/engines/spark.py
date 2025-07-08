@@ -10,6 +10,7 @@ class Spark(BaseEngine):
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_ONELAKE = True
+    SUPPORTS_SCHEMA_PREP = True
 
     def __init__(
             self,
@@ -42,7 +43,7 @@ class Spark(BaseEngine):
         self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
-    def append_array_to_delta(self, abfss_path: str, array: list):
+    def append_array_to_delta(self, abfss_path: str, array: list, schema: Optional[list] = None):
         """
         Append an array to a Delta table.
         """
