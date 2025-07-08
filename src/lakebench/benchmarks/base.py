@@ -59,6 +59,20 @@ class BaseBenchmark(ABC):
         self.timer = timer
         self.results = []
 
+    @classmethod
+    def register_engine(cls, engine_class: Type[BaseEngine], benchmark_impl: Optional[Type] = None):
+        """
+        Registers a custom engine class and its corresponding benchmark implementation.
+
+        Parameters
+        ----------
+        engine_class : Type[BaseEngine]
+            The engine class to register.
+        benchmark_impl : Type[BaseBenchmark], optional
+            The benchmark implementation class for the engine. If None, the engine's default methods will be used.
+        """
+        cls.BENCHMARK_IMPL_REGISTRY[engine_class] = benchmark_impl
+
     @abstractmethod
     def run(self):
         pass
