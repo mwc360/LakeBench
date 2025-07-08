@@ -22,7 +22,7 @@ WHERE
     AND l_commitdate < l_receiptdate
     AND l_shipdate < l_commitdate
     AND l_receiptdate >= CAST('1993-01-01' AS DATE)
-    AND l_receiptdate < CAST('1993-01-01' AS DATE) + INTERVAL '1' YEAR
+    AND l_receiptdate < DATE_ADD(CAST('1993-01-01' AS DATE), 365)
 GROUP BY
     l_shipmode
 ORDER BY

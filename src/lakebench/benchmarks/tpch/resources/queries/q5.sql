@@ -11,7 +11,7 @@ FROM
 WHERE
     r_name = 'ASIA'
     AND o_orderdate >= CAST('1994-01-01' AS DATE)
-    AND o_orderdate < CAST('1994-01-01' AS DATE) + INTERVAL '1' YEAR
+    AND o_orderdate < DATE_ADD(CAST('1994-01-01' AS DATE), 365)
 GROUP BY
     n_name
 ORDER BY
