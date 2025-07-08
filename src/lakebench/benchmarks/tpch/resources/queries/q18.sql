@@ -29,3 +29,4 @@ GROUP BY
 ORDER BY
     o_totalprice DESC,
     o_orderdate
+LIMIT 100
