@@ -2,6 +2,7 @@ from .base import BaseEngine
 from .delta_rs import DeltaRs
 
 import posixpath
+from importlib.metadata import version
 
 class Polars(BaseEngine):
     """
@@ -30,6 +31,8 @@ class Polars(BaseEngine):
         self.catalog_name = None
         self.schema_name = None
         self.sql = pl.SQLContext()
+
+        self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         table_df = self.pl.scan_parquet(

@@ -1,6 +1,7 @@
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
 import posixpath
+from importlib.metadata import version
 
 class DuckDB(BaseEngine):
     """
@@ -26,6 +27,8 @@ class DuckDB(BaseEngine):
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
+
+        self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()

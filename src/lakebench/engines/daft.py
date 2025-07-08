@@ -2,6 +2,7 @@ from .base import BaseEngine
 from .delta_rs import DeltaRs
 
 import posixpath
+from importlib.metadata import version
 
 class Daft(BaseEngine):
     """
@@ -37,7 +38,8 @@ class Daft(BaseEngine):
                 raise ValueError(
                     f"Daft engine does not support OneLake paths. Provide an ADLS Gen2 path instead."
                 )
-
+            
+        self.version: str = f"{version('daft')} (deltalake=={version('deltalake')})"
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         table_df = self.daft.read_parquet(

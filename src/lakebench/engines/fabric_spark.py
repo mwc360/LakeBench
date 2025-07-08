@@ -27,3 +27,5 @@ class FabricSpark(Spark):
 
         super().__init__(catalog_name=self.lakehouse_name, schema_name=self.lakehouse_schema_name, spark_measure_telemetry=spark_measure_telemetry)
 
+        self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
+

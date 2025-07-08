@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 from ..utils.timer import timer
 from ..engines.base import BaseEngine
+from importlib.metadata import version, PackageNotFoundError
 
 class BaseBenchmark(ABC):
     """
@@ -44,32 +45,41 @@ class BaseBenchmark(ABC):
     RESULT_SCHEMA = [
         ('run_id', 'STRING'),
         ('run_datetime', 'TIMESTAMP'),
+        ('lakebench_version', 'STRING'),
         ('engine', 'STRING'),
+        ('engine_version', 'STRING'),
         ('benchmark', 'STRING'),
+        ('benchmark_version', 'STRING'),
+        ('scale_factor', 'STRING'),
         ('scenario', 'STRING'),
         ('total_cores', 'INT'),
         ('compute_size', 'STRING'),
         ('phase', 'STRING'),
         ('test_item', 'STRING'),
         ('start_datetime', 'TIMESTAMP'),
-        ('duration_sec', 'FLOAT'),
         ('duration_ms', 'INT'),
         ('iteration', 'INT'),
         ('success', 'BOOLEAN'),
         ('error_message', 'STRING'),
-        ('metadata', 'MAP<STRING, STRING>')
+        ('engine_metadata', 'MAP<STRING, STRING>')
     ]
+    VERSION = ''
 
     def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False):
         self.engine = engine
         self.scenario_name = scenario_name
         self.result_abfss_path = result_abfss_path
         self.save_results = save_results
+
         self.header_detail_dict = {
             'run_id': str(uuid.uuid1()),
             'run_datetime': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+            'lakebench_version': version('lakebench'),
             'engine': type(engine).__name__,
+            'engine_version': self.engine.version,
             'benchmark': self.__class__.__name__,
+            'benchmark_version': self.VERSION,
+            'scale_factor': getattr(self, 'scale_factor', ''),
             'scenario': scenario_name,
             'total_cores': self.engine.get_total_cores(),
             'compute_size': self.engine.get_compute_size()
@@ -126,7 +136,6 @@ class BaseBenchmark(ABC):
                 'phase': phase,
                 'test_item': test_item,
                 'start_datetime': start_datetime,
-                "duration_sec": duration_ms / 1000,
                 'duration_ms': duration_ms,
                 'iteration': iteration,
                 'success': success,

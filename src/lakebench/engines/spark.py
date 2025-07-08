@@ -29,6 +29,7 @@ class Spark(BaseEngine):
         import pyspark.sql.functions as sf
         self.sf = sf
         self.spark = SparkSession.builder.getOrCreate()
+        self.version: str = self.spark.sparkContext.version
 
         self.catalog_name = catalog_name
         self.schema_name = schema_name

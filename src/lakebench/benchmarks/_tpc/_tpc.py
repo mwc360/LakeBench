@@ -45,17 +45,20 @@ class _TPC(BaseBenchmark):
         'q91', 'q92', 'q93', 'q94', 'q95', 'q96', 'q97', 'q98', 'q99'
     ]
     DDL_FILE_NAME = ''
+    VERSION = ''
 
     def __init__(
             self, 
             engine: BaseEngine, 
             scenario_name: str,
+            scale_factor: Optional[int] = None,
             query_list: Optional[List[str]] = None,
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
             result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
+        self.scale_factor = scale_factor
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         if query_list is not None:
             expanded_query_list = []

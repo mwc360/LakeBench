@@ -36,6 +36,8 @@ class BaseEngine(ABC):
             self.notebookutils = get_ipython().user_ns.get("notebookutils")
         except:
             pass
+
+        self.version: str = ''
                   
     def get_total_cores(self) -> int:
         """
