@@ -75,6 +75,7 @@ class BaseBenchmark(ABC):
             'compute_size': self.engine.get_compute_size()
         }
         self.timer = timer
+        self.timer.clear_results()
         self.results = []
 
     @classmethod
