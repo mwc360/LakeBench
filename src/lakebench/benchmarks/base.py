@@ -40,7 +40,25 @@ class BaseBenchmark(ABC):
         Processes and saves benchmark results. If `save_results` is True, results are appended to a Delta table
         at the specified `result_abfss_path`. Clears the timer results after processing.
     """
-    BENCHMARK_IMPL_REGISTRY: Dict[BaseEngine, Type] = {}
+    BENCHMARK_IMPL_REGISTRY: Dict[Type[BaseEngine], Type] = {}
+    RESULT_SCHEMA = [
+        ('run_id', 'STRING'),
+        ('run_datetime', 'TIMESTAMP'),
+        ('engine', 'STRING'),
+        ('benchmark', 'STRING'),
+        ('scenario', 'STRING'),
+        ('total_cores', 'INT'),
+        ('compute_size', 'STRING'),
+        ('phase', 'STRING'),
+        ('test_item', 'STRING'),
+        ('start_datetime', 'TIMESTAMP'),
+        ('duration_sec', 'FLOAT'),
+        ('duration_ms', 'INT'),
+        ('iteration', 'INT'),
+        ('success', 'BOOLEAN'),
+        ('error_message', 'STRING'),
+        ('metadata', 'MAP<STRING, STRING>')
+    ]
 
     def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False):
         self.engine = engine
@@ -120,7 +138,7 @@ class BaseBenchmark(ABC):
             if self.result_abfss_path is None:
                 raise ValueError("result_abfss_path must be provided if save_results is True.")
             else:
-                self.engine.append_array_to_delta(self.result_abfss_path, result_array)
+                self.engine.append_array_to_delta(self.result_abfss_path, result_array, self.RESULT_SCHEMA)
 
-        self.results.append(result_array)
+        self.results.extend(result_array)
         self.timer.clear_results()
