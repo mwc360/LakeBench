@@ -64,7 +64,7 @@ class _TPC(BaseBenchmark):
                     expanded_query_list.extend(self.QUERY_REGISTRY)  # Replace '*' with all queries
                 else:
                     expanded_query_list.append(query)
-            query_set = set(query_list)
+            query_set = set(expanded_query_list)
             if not query_set.issubset(self.QUERY_REGISTRY):
                 unsupported_queries = query_set - set(self.QUERY_REGISTRY)
                 raise ValueError(f"Query list contains unsupported queries: {unsupported_queries}. Supported queries: {self.QUERY_REGISTRY}.")
