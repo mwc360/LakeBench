@@ -59,16 +59,19 @@ class ELTBench(BaseBenchmark):
         'store_sales', 'time_dim', 'warehouse', 'web_page', 'web_returns',
         'web_sales', 'web_site'
     ]
+    VERSION = '1.0.0'
 
     def __init__(
             self, 
             engine: BaseEngine, 
             scenario_name: str,
+            scale_factor: Optional[int] = None,
             tpcds_parquet_mount_path: Optional[str] = None,
             tpcds_parquet_abfss_path: Optional[str] = None,
             result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
+        self.scale_factor = scale_factor
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items():
             if isinstance(engine, base_engine):

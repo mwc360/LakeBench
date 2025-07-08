@@ -51,3 +51,4 @@ class TPCH(_TPC):
         'q21', 'q22'
     ]
     DDL_FILE_NAME = 'ddl_v3.0.1.sql'
+    VERSION = '3.0.1'

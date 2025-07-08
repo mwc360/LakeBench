@@ -12,7 +12,7 @@ SELECT
 FROM
     lineitem
 WHERE
-    l_shipdate <= CAST('1998-12-01' AS DATE) - INTERVAL '88' DAY(3)
+    l_shipdate <= DATE_ADD(DATE '1998-12-01', -88)
 GROUP BY
     l_returnflag,
     l_linestatus

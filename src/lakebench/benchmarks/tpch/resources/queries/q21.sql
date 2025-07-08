@@ -34,3 +34,4 @@ GROUP BY
 ORDER BY
     numwait DESC,
     s_name
+LIMIT 100

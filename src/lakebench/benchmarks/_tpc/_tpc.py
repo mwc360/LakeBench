@@ -45,17 +45,20 @@ class _TPC(BaseBenchmark):
         'q91', 'q92', 'q93', 'q94', 'q95', 'q96', 'q97', 'q98', 'q99'
     ]
     DDL_FILE_NAME = ''
+    VERSION = ''
 
     def __init__(
             self, 
             engine: BaseEngine, 
             scenario_name: str,
+            scale_factor: Optional[int] = None,
             query_list: Optional[List[str]] = None,
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
             result_abfss_path: Optional[str] = None,
             save_results: bool = False
             ):
+        self.scale_factor = scale_factor
         super().__init__(engine, scenario_name, result_abfss_path, save_results)
         if query_list is not None:
             expanded_query_list = []
@@ -64,7 +67,7 @@ class _TPC(BaseBenchmark):
                     expanded_query_list.extend(self.QUERY_REGISTRY)  # Replace '*' with all queries
                 else:
                     expanded_query_list.append(query)
-            query_set = set(query_list)
+            query_set = set(expanded_query_list)
             if not query_set.issubset(self.QUERY_REGISTRY):
                 unsupported_queries = query_set - set(self.QUERY_REGISTRY)
                 raise ValueError(f"Query list contains unsupported queries: {unsupported_queries}. Supported queries: {self.QUERY_REGISTRY}.")
@@ -157,7 +160,16 @@ class _TPC(BaseBenchmark):
                         + " using delta"
                         + statement[closing_paren_index + 1:]
                     )
-            self.engine.execute_sql_statement(statement)
+
+            prepped_ddl = transpile_and_qualify_query(
+                query=statement, 
+                from_dialect='spark', 
+                to_dialect=self.engine.SQLGLOT_DIALECT, 
+                catalog=self.engine.catalog_name,
+                schema=self.engine.schema_name
+            )
+            
+            self.engine.execute_sql_statement(prepped_ddl)
 
     def _run_load_test(self):
         """
@@ -177,7 +189,7 @@ class _TPC(BaseBenchmark):
           for each table.
         - Results are posted after all tables have been processed.
         """
-        if isinstance(self.engine, Spark):
+        if self.engine.SUPPORTS_SCHEMA_PREP:
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
             with self.timer(phase="Load", test_item=table_name, engine=self.engine):

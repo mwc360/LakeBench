@@ -66,3 +66,4 @@ class TPCDS(_TPC):
         'q91', 'q92', 'q93', 'q94', 'q95', 'q96', 'q97', 'q98', 'q99'
     ]
     DDL_FILE_NAME = 'ddl_v3.2.0.sql'
+    VERSION = '3.2.0'

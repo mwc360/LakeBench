@@ -40,4 +40,5 @@ ORDER BY
     s.s_acctbal DESC,
     n.n_name,
     s.s_name,
-    p.p_partkey;
+    p.p_partkey
+LIMIT 100
