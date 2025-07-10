@@ -11,10 +11,10 @@ from ...engines.polars import Polars
 import importlib.resources
 import posixpath
 
-class _TPC(BaseBenchmark):
+class _LoadAndQuery(BaseBenchmark):
     """
-    Base class for TPC benchmarks. PLEASE DO NOT INSTANTIATE THIS CLASS DIRECTLY. Use the TPCH and TPCDS 
-    subclasses instead.
+    Base class for benchmarks that only have a simple Load and Query phase (TPC-H, TPC-DS, ClickBench). 
+    PLEASE DO NOT INSTANTIATE THIS CLASS DIRECTLY. Use the subclasses instead. 
     """
     BENCHMARK_IMPL_REGISTRY = {
         Spark: None,
@@ -22,8 +22,8 @@ class _TPC(BaseBenchmark):
         Daft: None,
         Polars: None
     }
-    MODE_REGISTRY = ['load', 'query', 'power_test']
-    TPC_BENCHMARK_VARIANT = ''
+    MODE_REGISTRY = ['load', 'query', 'power_test', 'query_and_load']
+    BENCHMARK_NAME = ''
     TABLE_REGISTRY = [
         'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
         'customer', 'customer_address', 'customer_demographics', 'date_dim',
@@ -51,7 +51,7 @@ class _TPC(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            scale_factor: Optional[int] = None,
+            scale_factor: Optional[str] = '',
             query_list: Optional[List[str]] = None,
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
@@ -103,6 +103,8 @@ class _TPC(BaseBenchmark):
                 )
             self.source_data_path = parquet_abfss_path or parquet_mount_path
 
+        self.benchmark_impl = self.benchmark_impl_class(self.engine) if self.benchmark_impl_class is not None else None
+
     def run(self, mode: str = 'power_test'):
         """
         Executes a specific test mode based on the provided mode string.
@@ -114,6 +116,7 @@ class _TPC(BaseBenchmark):
             - 'load': Executes the load test.
             - 'query': Executes the query test.
             - 'power_test': Executes the power test (default).
+            - 'query_and_load': Alias for 'power_test', runs both load and query tests.
 
         Notes
         -----
@@ -123,16 +126,16 @@ class _TPC(BaseBenchmark):
             self._run_load_test()
         elif mode == 'query':
             self._run_query_test()
-        elif mode == 'power_test':
+        elif mode in ('power_test', 'query_and_load'):
             self._run_power_test()
         else:
             raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
     
     def _prepare_schema(self):
         """
-        Prepares the database schema for the TPC benchmark.
+        Prepares the database schema for the benchmark.
         This method creates the schema if it does not exist, optionally dropping it before creation.
-        It then reads the DDL (Data Definition Language) file associated with the specific TPC benchmark variant,
+        It then reads the DDL (Data Definition Language) file associated with the specific benchmark,
         parses the SQL statements, and executes them to set up the schema.
 
         Parameters
@@ -144,7 +147,7 @@ class _TPC(BaseBenchmark):
         - The DDL file is expected to be located in the `resources.ddl` directory corresponding to the TPC benchmark variant.
         """
         self.engine.create_schema_if_not_exists(drop_before_create=True)
-        with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.ddl", self.DDL_FILE_NAME) as ddl_path:
+        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl", self.DDL_FILE_NAME) as ddl_path:
             with open(ddl_path, 'r') as ddl_file:
                 ddl = ddl_file.read()
             
@@ -193,57 +196,72 @@ class _TPC(BaseBenchmark):
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
             with self.timer(phase="Load", test_item=table_name, engine=self.engine):
-                self.engine.load_parquet_to_delta(
-                    parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
-                    table_name=table_name
-                )
+                if self.benchmark_impl is not None:
+                    # If a specific benchmark implementation is defined, use it to load the table
+                    self.benchmark_impl.load_parquet_to_delta(
+                        table_name=table_name, 
+                        source_data_path=self.source_data_path
+                    )
+                else:
+                    # Otherwise, use the generic load method
+                    self.engine.load_parquet_to_delta(
+                        parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
+                        table_name=table_name
+                    )
         self.post_results()
 
     def _run_query_test(self):
         """
-        Executes a series of SQL queries for benchmarking purposes.
-        This method registers tables with the engine if the engine is one of 
-        DuckDB, Daft, or Polars. It then iterates through a list of query names, 
-        reads the corresponding SQL files, transpiles the queries to match the 
-        engine's SQL dialect, and executes them while measuring execution time.
-        The results are processed and stored after all queries are executed.
-
-        Parameters
-        ----------
-        None
-
-        Notes
-        -----
-        - This method assumes the SQL files are located in a specific directory 
-          structure based on the TPC benchmark variant.
+        Executes a series of SQL queries defined in the `query_list` attribute.
         """
         if isinstance(self.engine, (DuckDB, Daft, Polars)):
             for table_name in self.TABLE_REGISTRY:
                 self.engine.register_table(table_name)
         for query_name in self.query_list:
-            with importlib.resources.path(f"lakebench.benchmarks.tpc{self.TPC_BENCHMARK_VARIANT.lower()}.resources.queries", f'{query_name}.sql') as query_path:
-                with open(query_path, 'r') as query_file:
-                    query = query_file.read()
-
-            prepped_query = transpile_and_qualify_query(
-                query=query, 
-                from_dialect='spark', 
-                to_dialect=self.engine.SQLGLOT_DIALECT, 
-                catalog=self.engine.catalog_name,
-                schema=self.engine.schema_name
-                )
+            prepped_query = self._return_query_definition(query_name)
             with self.timer(phase="Query", test_item=query_name, engine=self.engine):
-                execute_query = self.engine.execute_sql_query(prepped_query)
+                if self.benchmark_impl is not None:
+                    # If a specific benchmark implementation is defined, use it to perform the query
+                    execute_query = self.benchmark_impl.execute_sql_query(prepped_query)
+                else:
+                    # Otherwise, use the generic query method
+                    execute_query = self.engine.execute_sql_query(prepped_query)
         self.post_results()
 
     def _run_power_test(self):
         """
-        Executes the power test by running both the load test and the query test.
+        Executes the full benchmark by running both the load and query phases.
 
-        This method is responsible for orchestrating the execution of the power test,
-        which includes two main components:
-        1. Load Test: Prepares the system by loading necessary data.
-        2. Query Test: Executes a series of queries to evaluate system performance.
+        This method orchestrates:
+        1. Load phase: Loads data into the target system.
+        2. Query phase: Executes configured SQL queries to evaluate performance.
         """
         self._run_load_test()
         self._run_query_test()
+
+    def _return_query_definition(self, query_name: str) -> str:
+        """
+        Returns the SQL definition for a given query name.
+
+        Parameters
+        ----------
+        query_name : str
+            The name of the query to retrieve.
+
+        Returns
+        -------
+        str
+            The SQL definition for the specified query.
+        """
+        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries", f'{query_name}.sql') as query_path:
+            with open(query_path, 'r') as query_file:
+                query = query_file.read()
+
+        prepped_query = transpile_and_qualify_query(
+            query=query, 
+            from_dialect='spark', 
+            to_dialect=self.engine.SQLGLOT_DIALECT, 
+            catalog=self.engine.catalog_name,
+            schema=self.engine.schema_name
+            )
+        return prepped_query

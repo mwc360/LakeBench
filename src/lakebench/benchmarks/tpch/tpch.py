@@ -1,6 +1,11 @@
-from .._tpc import _TPC
+from .._load_and_query import _LoadAndQuery
 
-class TPCH(_TPC):
+from ...engines.spark import Spark
+from ...engines.duckdb import DuckDB
+from ...engines.daft import Daft
+from ...engines.polars import Polars
+
+class TPCH(_LoadAndQuery):
     """
     Class for running the TPC-H benchmark.
 
@@ -40,7 +45,13 @@ class TPCH(_TPC):
     _run_power_test()
         Runs both the load and query tests.
     """
-    TPC_BENCHMARK_VARIANT = 'H'
+    BENCHMARK_IMPL_REGISTRY = {
+        Spark: None,
+        DuckDB: None,
+        Daft: None,
+        Polars: None
+    }
+    BENCHMARK_NAME = 'TPCH'
     TABLE_REGISTRY = [
         'customer', 'lineitem', 'nation', 'orders', 'part',
         'partsupp', 'region', 'supplier'
