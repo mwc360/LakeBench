@@ -20,7 +20,7 @@ LakeBench exists to bring clarity, trust, accessibility, and relevance to engine
 
     Somehow, every engine claims to be the fastest at the same benchmark, _at the same time_. Without a standardized framework, with support for many engines, comparisons are hard to trust and even more difficult to reproduce.
 
-    > LakeBench ensures **consistent methodology across engines**, reducing the likelihood of implementation bias and enabling repeatable, trustworthy results. Engine subjet matter experts are _encoured_ to submit PRs to tune code as needed so that their preferred engine is best represented.
+    > LakeBench ensures **consistent methodology across engines**, reducing the likelihood of implementation bias and enabling repeatable, trustworthy results. Engine subject matter experts are _encouraged_ to submit PRs to tune code as needed so that their preferred engine is best represented.
 
 1. **Accessibility starts with `pip install`**
 
