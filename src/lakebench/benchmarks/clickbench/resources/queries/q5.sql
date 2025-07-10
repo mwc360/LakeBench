@@ -1,0 +1,4 @@
+SELECT
+    COUNT(DISTINCT UserID)
+FROM
+    hits;

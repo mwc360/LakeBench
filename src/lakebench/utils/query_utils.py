@@ -8,6 +8,6 @@ def transpile_and_qualify_query(query:str, from_dialect:str, to_dialect:str, cat
         catalog=catalog, 
         db=schema, 
         dialect=from_dialect) \
-    .sql(to_dialect, normalize=True)
+    .sql(to_dialect, normalize=False)
 
     return qualified_sql

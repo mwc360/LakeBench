@@ -13,7 +13,6 @@ class FabricSpark(Spark):
 
     def __init__(
             self,
-            lakehouse_workspace_name: str, 
             lakehouse_name: str, 
             lakehouse_schema_name: str,
             spark_measure_telemetry: bool = False
@@ -23,7 +22,6 @@ class FabricSpark(Spark):
         """
         self.lakehouse_name = lakehouse_name
         self.lakehouse_schema_name = lakehouse_schema_name
-        self.lakehouse_workspace_name = lakehouse_workspace_name
 
         super().__init__(catalog_name=self.lakehouse_name, schema_name=self.lakehouse_schema_name, spark_measure_telemetry=spark_measure_telemetry)
 
