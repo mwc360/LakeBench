@@ -66,9 +66,9 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 | Engine          | ELTBench | AtomicELT | TPC-DS | TPC-H   | ClickBench |
 |-----------------|:--------:|:---------:|:------:|:-------:|:----------:|
 | Spark (Fabric)  |    ✅    |     🔜    |   ✅   |   ✅  |    ✅    |
-| DuckDB          |    ✅    |     🔜    |   ✅   |   ✅  |    ✅    |
-| Polars          |    ✅    |     🔜    |   ✅   |   ✅  |    ✅    |
-| Daft            |    ✅    |     🔜    |   ✅   |   ✅  |    ✅    |
+| DuckDB          |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
+| Polars          |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
+| Daft            |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
 
 > **Legend:**  
 > ✅ = Supported  
