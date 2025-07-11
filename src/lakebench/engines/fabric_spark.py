@@ -28,4 +28,4 @@ class FabricSpark(Spark):
         super().__init__(catalog_name=self.lakehouse_name, schema_name=self.lakehouse_schema_name, spark_measure_telemetry=spark_measure_telemetry, cost_per_vcore_hour=cost_per_vcore_hour)
 
         self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
-        self.cost_per_vcore_hour = self._FABRIC_USD_COST_PER_VCORE_HOUR or cost_per_vcore_hour
+        self.cost_per_vcore_hour = cost_per_vcore_hour or self._FABRIC_USD_COST_PER_VCORE_HOUR
