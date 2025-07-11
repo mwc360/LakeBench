@@ -77,7 +77,6 @@ class Spark(BaseEngine):
         # Use default order of columns in dictionary
         columns = list(results[0].keys())
         df = self.spark.createDataFrame(results, schema=schema).select(*columns)
-        df = df.withColumn('estimated_job_cost', sf.when(sf.isnan(sf.col('estimated_job_cost')), sf.lit(None)).otherwise(sf.col('estimated_job_cost')))
         df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
 
     def get_total_cores(self) -> int:
