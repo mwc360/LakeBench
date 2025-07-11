@@ -60,7 +60,6 @@ class Spark(BaseEngine):
             'SMALLINT': ShortType(),
             'INT': IntegerType(),
             'BIGINT': LongType(),
-            'INT': IntegerType(),
             'FLOAT': FloatType(),
             'DOUBLE': DoubleType(),
             'DECIMAL(18,10)': DecimalType(18,10),  # Spark does not have a specific Decimal type, using DoubleType
