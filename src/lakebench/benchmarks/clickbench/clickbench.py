@@ -86,7 +86,7 @@ class ClickBench(_LoadAndQuery):
         super().__init__(
             engine=engine, 
             scenario_name=scenario_name,
-            scale_factor='',
+            scale_factor=None,
             query_list=query_list,
             parquet_mount_path=parquet_mount_path,
             parquet_abfss_path=parquet_abfss_path,

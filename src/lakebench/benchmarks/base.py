@@ -50,15 +50,16 @@ class BaseBenchmark(ABC):
         ('engine_version', 'STRING'),
         ('benchmark', 'STRING'),
         ('benchmark_version', 'STRING'),
-        ('scale_factor', 'STRING'),
+        ('scale_factor', 'INT'),
         ('scenario', 'STRING'),
-        ('total_cores', 'INT'),
+        ('total_cores', 'SMALLINT'),
         ('compute_size', 'STRING'),
         ('phase', 'STRING'),
         ('test_item', 'STRING'),
         ('start_datetime', 'TIMESTAMP'),
         ('duration_ms', 'INT'),
-        ('iteration', 'INT'),
+        ('estimated_job_cost', 'DECIMAL(18,10)'),
+        ('iteration', 'TINYINT'),
         ('success', 'BOOLEAN'),
         ('error_message', 'STRING'),
         ('engine_metadata', 'MAP<STRING, STRING>')
@@ -73,13 +74,13 @@ class BaseBenchmark(ABC):
 
         self.header_detail_dict = {
             'run_id': str(uuid.uuid1()),
-            'run_datetime': datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+            'run_datetime': datetime.now(),
             'lakebench_version': version('lakebench'),
             'engine': type(engine).__name__,
             'engine_version': self.engine.version,
             'benchmark': self.__class__.__name__,
             'benchmark_version': self.VERSION,
-            'scale_factor': getattr(self, 'scale_factor', ''),
+            'scale_factor': getattr(self, 'scale_factor', None),
             'scenario': scenario_name,
             'total_cores': self.engine.get_total_cores(),
             'compute_size': self.engine.get_compute_size()
@@ -130,6 +131,7 @@ class BaseBenchmark(ABC):
         # Processes the results and saves them if `save_results` is True.
         # post_results() should be called after each major benchmark phase.
         """
+
         result_array = [
             {
                 **self.header_detail_dict,
@@ -137,18 +139,22 @@ class BaseBenchmark(ABC):
                 'test_item': test_item,
                 'start_datetime': start_datetime,
                 'duration_ms': duration_ms,
+                'estimated_job_cost': self.engine.get_job_cost(duration_ms), 
                 'iteration': iteration,
                 'success': success,
                 'error_message': error_message
             }
             for phase, test_item, start_datetime, duration_ms, iteration, success, error_message in self.timer.results
         ]
+        self.results.extend(result_array)
 
         if self.save_results:
             if self.result_abfss_path is None:
                 raise ValueError("result_abfss_path must be provided if save_results is True.")
             else:
-                self.engine.append_array_to_delta(self.result_abfss_path, result_array, self.RESULT_SCHEMA)
-
-        self.results.extend(result_array)
-        self.timer.clear_results()
+                try:
+                    self.engine._append_results_to_delta(self.result_abfss_path, result_array, self.RESULT_SCHEMA)
+                except Exception as e:
+                    raise e
+                finally:
+                    self.timer.clear_results()

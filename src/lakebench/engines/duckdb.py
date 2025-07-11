@@ -2,6 +2,7 @@ from .base import BaseEngine
 from  .delta_rs import DeltaRs
 import posixpath
 from importlib.metadata import version
+from typing import Optional
 
 class DuckDB(BaseEngine):
     """
@@ -15,11 +16,13 @@ class DuckDB(BaseEngine):
 
     def __init__(
             self, 
-            delta_abfss_schema_path: str
+            delta_abfss_schema_path: str,
+            cost_per_vcore_hour: Optional[float] = None,
             ):
         """
         Initialize the DuckDB Engine Configs
         """
+        super().__init__()
         import duckdb
         self.duckdb = duckdb.connect()
         self.duckdb.sql(f""" CREATE or replace SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{self.notebookutils.credentials.getToken('storage')}') ;""")
@@ -29,6 +32,7 @@ class DuckDB(BaseEngine):
         self.schema_name = None
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
+        self.cost_per_vcore_hour = self._FABRIC_USD_COST_PER_VCORE_HOUR or cost_per_vcore_hour
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()

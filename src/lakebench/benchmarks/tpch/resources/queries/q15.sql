@@ -6,7 +6,7 @@ WITH revenue0 AS (
         lineitem
     WHERE
         l_shipdate >= CAST('1995-03-01' AS DATE)
-        AND l_shipdate < ADD_MONTHS(CAST('1995-03-01' AS DATE), 3)
+        AND l_shipdate < CAST('1995-03-01' AS DATE) + INTERVAL '3' MONTH
     GROUP BY
         l_suppkey
 )

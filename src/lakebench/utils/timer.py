@@ -14,7 +14,7 @@ def timer(phase: str = "Elapsed time", test_item: str = '', engine: str = None):
         engine.spark.sparkContext.setJobDescription(f"{phase} - {test_item} [i:{iteration}]")
 
     start = time.time()
-    start_datetime = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
+    start_datetime = datetime.now()
     success = True
     error_message = None
     error_type = None

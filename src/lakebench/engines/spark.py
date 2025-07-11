@@ -11,16 +11,19 @@ class Spark(BaseEngine):
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_ONELAKE = True
     SUPPORTS_SCHEMA_PREP = True
+    
 
     def __init__(
             self,
             catalog_name: Optional[str],
             schema_name: str,
-            spark_measure_telemetry: bool = False
+            spark_measure_telemetry: bool = False,
+            cost_per_vcore_hour: Optional[float] = None
             ):
         """
         Initialize the SparkEngine with a Spark session.
         """
+        super().__init__()
         from pyspark.sql import SparkSession
         if spark_measure_telemetry:
             from sparkmeasure import StageMetrics
@@ -34,6 +37,7 @@ class Spark(BaseEngine):
         self.catalog_name = catalog_name
         self.schema_name = schema_name
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
+        self.cost_per_vcore_hour = cost_per_vcore_hour
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """
@@ -44,13 +48,35 @@ class Spark(BaseEngine):
         self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
-    def append_array_to_delta(self, abfss_path: str, array: list, schema: Optional[list] = None):
+    def _convert_generic_to_specific_schema(self, generic_schema: list):
+        """
+        Convert a generic schema to a specific Spark schema.
+        """
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DoubleType, BooleanType, TimestampType, MapType, ByteType, ShortType, LongType, DecimalType
+        type_mapping = {
+            'STRING': StringType(),
+            'TIMESTAMP': TimestampType(),
+            'TINYINT': ByteType(),
+            'SMALLINT': ShortType(),
+            'INT': IntegerType(),
+            'BIGINT': LongType(),
+            'FLOAT': FloatType(),
+            'DOUBLE': DoubleType(),
+            'DECIMAL(18,10)': DecimalType(18,10),  # Spark does not have a specific Decimal type, using DoubleType
+            'BOOLEAN': BooleanType(),
+            'MAP<STRING, STRING>': MapType(StringType(), StringType())
+        }
+        return StructType([StructField(name, type_mapping[data_type], True) for name, data_type in generic_schema])
+
+    def _append_results_to_delta(self, abfss_path: str, results: list, generic_schema: list):
         """
         Append an array to a Delta table.
         """
+        import pyspark.sql.functions as sf
+        schema = self._convert_generic_to_specific_schema(generic_schema)
         # Use default order of columns in dictionary
-        columns = list(array[0].keys())
-        df = self.spark.createDataFrame(array).select(*columns)
+        columns = list(results[0].keys())
+        df = self.spark.createDataFrame(results, schema=schema).select(*columns)
         df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
 
     def get_total_cores(self) -> int:
@@ -61,7 +87,7 @@ class Spark(BaseEngine):
         """
         cores = int(len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos())) * os.cpu_count())
         return cores
-    
+        
     def get_compute_size(self) -> str:
         """
         Returns a formatted string with the compute size.

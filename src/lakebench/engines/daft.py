@@ -3,6 +3,7 @@ from .delta_rs import DeltaRs
 
 import posixpath
 from importlib.metadata import version
+from typing import Optional
 
 class Daft(BaseEngine):
     """
@@ -16,11 +17,13 @@ class Daft(BaseEngine):
 
     def __init__(
             self, 
-            delta_abfss_schema_path: str
+            delta_abfss_schema_path: str,
+            cost_per_vcore_hour: Optional[float] = None
             ):
         """
         Initialize the Daft Engine Configs
         """
+        super().__init__()
         import daft
         from daft.io import IOConfig, AzureConfig
         self.daft = daft
@@ -40,6 +43,7 @@ class Daft(BaseEngine):
                 )
             
         self.version: str = f"{version('daft')} (deltalake=={version('deltalake')})"
+        self.cost_per_vcore_hour = cost_per_vcore_hour or self._FABRIC_USD_COST_PER_VCORE_HOUR
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
         table_df = self.daft.read_parquet(

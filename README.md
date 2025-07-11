@@ -36,6 +36,7 @@ LakeBench exists to bring clarity, trust, accessibility, and relevance to engine
 - **Consistent Execution**: One framework, many engines
 - **Extensible by Design**: Add engines or additional benchmarks with minimal friction
 - **Dataset Generation**: Out-of-the box dataset generation for all benchmarks
+- **Rich Logs**: Automatically logged engine version, compute size, duration, estimated execution cost, etc.
 
 LakeBench empowers data teams to make informed engine decisions based on real workloads, not just marketing claims.
 
@@ -63,15 +64,16 @@ _Planned_
 
 LakeBench supports multiple lakehouse compute engines. Each benchmark scenario declares which engines it supports via `<BenchmarkClassName>.BENCHMARK_IMPL_REGISTRY`.
 
-| Engine          | ELTBench | AtomicELT | TPC-DS | TPC-H   | ClickBench |
-|-----------------|:--------:|:---------:|:------:|:-------:|:----------:|
-| Spark (Fabric)  |    ✅    |     🔜    |   ✅   |   ✅  |    ✅    |
-| DuckDB          |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
-| Polars          |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
-| Daft            |    ✅    |     🔜    |   ✅   |   ✅  |    🔜    |
+| Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench | AtomicELT |
+|-----------------|:--------:|:------:|:-------:|:----------:|:---------:|
+| Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |     🔜    |
+| DuckDB          |    ✅    |   ⚠️   |   ✅  |    🔜    |     🔜    |
+| Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |     🔜    |
+| Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |     🔜    |
 
 > **Legend:**  
 > ✅ = Supported  
+> ⚠️ = Some queries fail due to syntax issues (i.e. Polars doesn't support SQL non-equi joins), fixes coming soon!
 > 🔜 = Coming Soon  
 > (Blank) = Not currently supported 
 
