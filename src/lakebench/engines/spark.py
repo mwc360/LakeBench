@@ -44,13 +44,37 @@ class Spark(BaseEngine):
         self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
-    def append_array_to_delta(self, abfss_path: str, array: list, schema: Optional[list] = None):
+    def _convert_generic_to_specific_schema(self, generic_schema: list):
+        """
+        Convert a generic schema to a specific Spark schema.
+        """
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DoubleType, BooleanType, TimestampType, MapType, ByteType, ShortType, LongType, DecimalType
+        type_mapping = {
+            'STRING': StringType(),
+            'TIMESTAMP': TimestampType(),
+            'TINYINT': ByteType(),
+            'SMALLINT': ShortType(),
+            'INT': IntegerType(),
+            'BIGINT': LongType(),
+            'INT': IntegerType(),
+            'FLOAT': FloatType(),
+            'DOUBLE': DoubleType(),
+            'DECIMAL(18,10)': DecimalType(18,10),  # Spark does not have a specific Decimal type, using DoubleType
+            'BOOLEAN': BooleanType(),
+            'MAP<STRING, STRING>': MapType(StringType(), StringType())
+        }
+        return StructType([StructField(name, type_mapping[data_type], True) for name, data_type in generic_schema])
+
+    def _append_results_to_delta(self, abfss_path: str, results: list, generic_schema: list):
         """
         Append an array to a Delta table.
         """
+        import pyspark.sql.functions as sf
+        schema = self._convert_generic_to_specific_schema(generic_schema)
         # Use default order of columns in dictionary
-        columns = list(array[0].keys())
-        df = self.spark.createDataFrame(array).select(*columns)
+        columns = list(results[0].keys())
+        df = self.spark.createDataFrame(results, schema=schema).select(*columns)
+        df = df.withColumn('estimated_job_cost', sf.when(sf.isnan(sf.col('estimated_job_cost')), sf.lit(None)).otherwise(sf.col('estimated_job_cost')))
         df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
 
     def get_total_cores(self) -> int:
@@ -61,7 +85,7 @@ class Spark(BaseEngine):
         """
         cores = int(len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos())) * os.cpu_count())
         return cores
-    
+        
     def get_compute_size(self) -> str:
         """
         Returns a formatted string with the compute size.

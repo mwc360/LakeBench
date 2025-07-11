@@ -51,7 +51,7 @@ class _LoadAndQuery(BaseBenchmark):
             self, 
             engine: BaseEngine, 
             scenario_name: str,
-            scale_factor: Optional[str] = '',
+            scale_factor: Optional[int] = None,
             query_list: Optional[List[str]] = None,
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
