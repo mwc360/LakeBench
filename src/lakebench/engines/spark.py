@@ -11,16 +11,19 @@ class Spark(BaseEngine):
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_ONELAKE = True
     SUPPORTS_SCHEMA_PREP = True
+    
 
     def __init__(
             self,
             catalog_name: Optional[str],
             schema_name: str,
-            spark_measure_telemetry: bool = False
+            spark_measure_telemetry: bool = False,
+            cost_per_vcore_hour: Optional[float] = None
             ):
         """
         Initialize the SparkEngine with a Spark session.
         """
+        super().__init__()
         from pyspark.sql import SparkSession
         if spark_measure_telemetry:
             from sparkmeasure import StageMetrics
@@ -34,6 +37,7 @@ class Spark(BaseEngine):
         self.catalog_name = catalog_name
         self.schema_name = schema_name
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
+        self.cost_per_vcore_hour = cost_per_vcore_hour
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """

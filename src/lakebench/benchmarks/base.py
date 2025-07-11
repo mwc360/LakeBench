@@ -131,6 +131,7 @@ class BaseBenchmark(ABC):
         # Processes the results and saves them if `save_results` is True.
         # post_results() should be called after each major benchmark phase.
         """
+
         result_array = [
             {
                 **self.header_detail_dict,
@@ -138,12 +139,14 @@ class BaseBenchmark(ABC):
                 'test_item': test_item,
                 'start_datetime': start_datetime,
                 'duration_ms': duration_ms,
+                'estimated_job_cost': self.engine.get_job_cost(duration_ms), 
                 'iteration': iteration,
                 'success': success,
                 'error_message': error_message
             }
             for phase, test_item, start_datetime, duration_ms, iteration, success, error_message in self.timer.results
         ]
+        self.results.extend(result_array)
 
         if self.save_results:
             if self.result_abfss_path is None:

@@ -37,10 +37,12 @@ class BaseEngine(ABC):
         try:
             from IPython.core.getipython import get_ipython
             self.notebookutils = get_ipython().user_ns.get("notebookutils")
+            self.is_fabric = True if self.notebookutils.runtime.context['productType'] == 'Fabric' else False
         except:
-            pass
+            self.is_fabric = False
 
         self.version: str = ''
+        self.cost_per_vcore_hour: Optional[float] = None
                   
     def get_total_cores(self) -> int:
         """
