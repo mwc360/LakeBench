@@ -143,7 +143,7 @@ class BaseEngine(ABC):
                 abfss_path, 
                 table, 
                 mode="append",
-                schema_mode='merge'
+                schema_mode='merge',
                 engine='rust'
             )
         else:

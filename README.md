@@ -135,7 +135,7 @@ _Generating scale factor 1 data takes about 1 minute on a 2vCore VM._
 
 #### TPC-H Data Generation
 ```python
-from lakebench.datagen.tpch import TPCHDataGenerator
+from lakebench.datagen import TPCHDataGenerator
 
 datagen = TPCHDataGenerator(
     scale_factor=1,
@@ -146,7 +146,7 @@ datagen.run()
 
 #### TPC-DS Data Generation
 ```python
-from lakebench.datagen.tpcds import TPCDSDataGenerator
+from lakebench.datagen import TPCDSDataGenerator
 
 datagen = TPCDSDataGenerator(
     scale_factor=1,
@@ -163,8 +163,8 @@ _Notes:_
 
 ### Fabric Spark
 ```python
-from lakebench.engines.fabric_spark import FabricSpark
-from lakebench.benchmarks.elt_bench import ELTBench
+from lakebench.engines import FabricSpark
+from lakebench.benchmarks import ELTBench
 
 engine = FabricSpark(
     lakehouse_workspace_name="workspace",
@@ -186,8 +186,8 @@ benchmark.run()
 
 ### Polars
 ```python
-from lakebench.engines.polars import Polars
-from lakebench.benchmarks.elt_bench import ELTBench
+from lakebench.engines import Polars
+from lakebench.benchmarks import ELTBench
 
 engine = Polars( 
     delta_abfss_schema_path = 'abfss://...'
