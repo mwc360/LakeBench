@@ -43,8 +43,6 @@ def timer(phase: str = "Elapsed time", test_item: str = '', engine: str = None):
         # Set execution metadata to an empty dict if it is not set or was set to anything other than a dict
         if not isinstance(timer_context.execution_telemetry, dict):
             timer_context.execution_telemetry = {}
-        else:
-            pass
 
         if isinstance(engine, Spark):
             engine.spark.sparkContext.setJobDescription(None)
