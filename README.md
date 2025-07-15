@@ -54,9 +54,6 @@ LakeBench currently supports four benchmarks with more to come:
 - **[TPC-H](https://www.tpc.org/tpch/)**: Focuses on ad-hoc decision support with 8 tables and 22 queries, evaluating performance on business-oriented analytical workloads.
 - **[ClickBench](https://github.com/ClickHouse/ClickBench)**: A benchmark that simulates ad-hoc analytical and real-time queries on clickstream, traffic analysis, web analytics, machine-generated data, structured logs, and events data. The load phase (single flat table) is followed by 43 queries.
 
-_Coming Soon_
-- **AtomicELT**: A derivative of _ELTBench_ that focuses on the performance of individual ELT operations. Each operation type is executed only once, allowing for granular comparison of engine performance on specific tasks. Results should be interpreted per operation, not as a cumulative runtime.
-
 _Planned_
 - **[TPC-DI](https://www.tpc.org/tpcdi/)**: An industry-standard benchmark for data integration workloads, evaluating end-to-end ETL/ELT performance across heterogeneous sources—including data ingestion, transformation, and loading processes.
 
@@ -64,12 +61,12 @@ _Planned_
 
 LakeBench supports multiple lakehouse compute engines. Each benchmark scenario declares which engines it supports via `<BenchmarkClassName>.BENCHMARK_IMPL_REGISTRY`.
 
-| Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench | AtomicELT |
-|-----------------|:--------:|:------:|:-------:|:----------:|:---------:|
-| Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |     🔜    |
-| DuckDB          |    ✅    |   ⚠️   |   ✅  |    🔜    |     🔜    |
-| Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |     🔜    |
-| Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |     🔜    |
+| Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench |
+|-----------------|:--------:|:------:|:-------:|:----------:|
+| Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |
+| DuckDB          |    ✅    |   ⚠️   |   ✅  |    🔜    |
+| Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
+| Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 
 > **Legend:**  
 > ✅ = Supported  
@@ -88,7 +85,7 @@ LakeBench is designed to be _extensible_, both for additional engines and benchm
 New engines can be added via subclassing an existing engine class. Existing benchmarks can then register support for additional engines via the below:
 
 ```python
-from lakebench.benchmarks.tpcds import TPCDS
+from lakebench.benchmarks import TPCDS
 TPCDS.register_engine(MyNewEngine, None)
 ```
 
@@ -98,7 +95,7 @@ This architecture encourages experimentation, benchmarking innovation, and easy 
 
 _Example:_
 ```python
-from lakebench.engines.base import BaseEngine
+from lakebench.engines import BaseEngine
 
 class MyCustomEngine(BaseEngine):
     ...
@@ -120,7 +117,7 @@ benchmark.run()
 Install from PyPi:
 
 ```bash
-pip install lakebench[duckdb,polars,daft,tpcds_datagen,tpch_datagen]
+pip install lakebench[duckdb,polars,daft,tpcds_datagen,tpch_datagen,sparkmeasure]
 ```
 
 _Note: in this initial beta version, all engines have only been tested inside Microsoft Fabric Python and Spark Notebooks._
@@ -169,7 +166,8 @@ from lakebench.benchmarks import ELTBench
 engine = FabricSpark(
     lakehouse_workspace_name="workspace",
     lakehouse_name="lakehouse",
-    lakehouse_schema_name="schema"
+    lakehouse_schema_name="schema",
+    spark_measure_telemetry=True
 )
 
 benchmark = ELTBench(
@@ -183,6 +181,8 @@ benchmark = ELTBench(
 
 benchmark.run()
 ```
+
+> _Note: The `spark_measure_telemetry` flag can be enabled to capture stage metrics in the results. The `sparkmeasure` install option must be used when `spark_measure_telemetry` is enabled (`%pip install lakebench[sparkmeasure]`). Additionally, the Spark-Measure JAR must be installed from Maven: https://mvnrepository.com/artifact/ch.cern.sparkmeasure/spark-measure_2.13/0.24_
 
 ### Polars
 ```python

@@ -1,6 +1,7 @@
 from .base import BaseEngine
 import os
 from typing import Optional
+import posixpath
 
 class Spark(BaseEngine):
     """
@@ -17,6 +18,7 @@ class Spark(BaseEngine):
             self,
             catalog_name: Optional[str],
             schema_name: str,
+            schema_abfss_path: Optional[str] = None,
             spark_measure_telemetry: bool = False,
             cost_per_vcore_hour: Optional[float] = None
             ):
@@ -25,27 +27,61 @@ class Spark(BaseEngine):
         """
         super().__init__()
         from pyspark.sql import SparkSession
-        if spark_measure_telemetry:
-            from sparkmeasure import StageMetrics
-        self.spark_measure_telemetry = spark_measure_telemetry
-
         import pyspark.sql.functions as sf
         self.sf = sf
         self.spark = SparkSession.builder.getOrCreate()
+        if spark_measure_telemetry:
+            try:
+                from sparkmeasure import StageMetrics
+                self.capture_metrics = StageMetrics(self.spark)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("`sparkmeasure` is not installed, either disable the `spark_measure_telemetry` flag, run `%pip install sparkmeasure==0.24.0`, or install LakeBench with the sparkmeasure option: `%pip install lakebench[sparkmeasure]`.")
+        self.spark_measure_telemetry = spark_measure_telemetry
+
         self.version: str = self.spark.sparkContext.version
 
         self.catalog_name = catalog_name
         self.schema_name = schema_name
+        self.schema_abfss_path = schema_abfss_path
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
         self.cost_per_vcore_hour = cost_per_vcore_hour
+        self.spark_configs = self.__get_spark_session_configs()
+        self.extended_engine_metadata.update({
+            'parquet.block.size': self.spark.sparkContext._jsc.hadoopConfiguration().get("parquet.block.size"),
+        })
+        spark_configs_to_log = {k: v for k, v in self.spark_configs.items() if k in [
+            'spark.executor.memory',
+            'spark.databricks.delta.optimizeWrite.enabled',
+            'spark.databricks.delta.optimizeWrite.binSize',
+            'spark.sql.autoBroadcastJoinThreshold',
+            'spark.sql.sources.parallelPartitionDiscovery.parallelism',
+            'spark.sql.cbo.enabled',
+            'spark.sql.shuffle.partitions'
+        ]}
+
+        self.extended_engine_metadata.update(spark_configs_to_log)
+
+    def __get_spark_session_configs(self) -> dict:
+        scala_map = self.spark.conf._jconf.getAll()
+        spark_conf_dict = {}
+ 
+        iterator = scala_map.iterator()
+        while iterator.hasNext():
+            entry = iterator.next()
+            key = entry._1()
+            value = entry._2()
+            spark_conf_dict[key] = value
+        return spark_conf_dict
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """
         Prepare an empty schema in the lakehouse.
         """
+        location_str = f"LOCATION '{posixpath.join(self.schema_abfss_path, self.schema_name)}'" if self.schema_abfss_path is not None else ''
+
         if drop_before_create:
             self.spark.sql(f"DROP SCHEMA IF EXISTS {self.full_catalog_schema_reference} CASCADE")
-        self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
+        self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference} {location_str}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
     def _convert_generic_to_specific_schema(self, generic_schema: list):
@@ -96,7 +132,7 @@ class Spark(BaseEngine):
         """        
         sc_conf_dict = {key: value for key, value in self.spark.sparkContext.getConf().getAll()}
         executor_count = self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size() - 1
-        executor_cores = int(sc_conf_dict.get('spark.executor.cores'))
+        executor_cores = int(sc_conf_dict.get('spark.executor.cores', os.cpu_count()))
         vm_host_count = len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
         worker_count = vm_host_count - 1
         worker_cores = os.cpu_count()
@@ -118,9 +154,12 @@ class Spark(BaseEngine):
 
         return cluster_config
     
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
         df = self.spark.read.parquet(parquet_folder_path)
-        df.write.format('delta').mode("append").saveAsTable(table_name)
+        if table_is_precreated:
+            df.write.insertInto(table_name, overwrite=True)
+        else:
+            df.write.format('delta').mode("append").saveAsTable(table_name)
     
     def execute_sql_query(self, query: str):
         execute_sql = self.spark.sql(query).collect()

@@ -58,22 +58,23 @@ class BaseBenchmark(ABC):
         ('test_item', 'STRING'),
         ('start_datetime', 'TIMESTAMP'),
         ('duration_ms', 'INT'),
-        ('estimated_job_cost', 'DECIMAL(18,10)'),
+        ('retail_job_cost', 'DECIMAL(18,10)'),
         ('iteration', 'TINYINT'),
         ('success', 'BOOLEAN'),
         ('error_message', 'STRING'),
-        ('engine_metadata', 'MAP<STRING, STRING>')
+        ('engine_properties', 'MAP<STRING, STRING>'),      # Additional Platform configs/metadata
+        ('execution_telemetry', 'MAP<STRING, STRING>')    # Test-item execution details
     ]
     VERSION = ''
 
-    def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False):
+    def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False, run_id: Optional[str] = None):
         self.engine = engine
         self.scenario_name = scenario_name
         self.result_abfss_path = result_abfss_path
         self.save_results = save_results
 
         self.header_detail_dict = {
-            'run_id': str(uuid.uuid1()),
+            'run_id': run_id if run_id is not None else str(uuid.uuid1()),
             'run_datetime': datetime.now(),
             'lakebench_version': version('lakebench'),
             'engine': type(engine).__name__,
@@ -139,12 +140,14 @@ class BaseBenchmark(ABC):
                 'test_item': test_item,
                 'start_datetime': start_datetime,
                 'duration_ms': duration_ms,
-                'estimated_job_cost': self.engine.get_job_cost(duration_ms), 
+                'retail_job_cost': self.engine.get_job_cost(duration_ms), 
                 'iteration': iteration,
                 'success': success,
-                'error_message': error_message
+                'error_message': error_message,
+                'engine_properties': self.engine.extended_engine_metadata,
+                'execution_telemetry': execution_telemetry
             }
-            for phase, test_item, start_datetime, duration_ms, iteration, success, error_message in self.timer.results
+            for phase, test_item, start_datetime, duration_ms, iteration, success, error_message, execution_telemetry in self.timer.results
         ]
         self.results.extend(result_array)
 
