@@ -99,7 +99,7 @@ class Spark(BaseEngine):
         """        
         sc_conf_dict = {key: value for key, value in self.spark.sparkContext.getConf().getAll()}
         executor_count = self.spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size() - 1
-        executor_cores = int(sc_conf_dict.get('spark.executor.cores'))
+        executor_cores = int(sc_conf_dict.get('spark.executor.cores', os.cpu_count()))
         vm_host_count = len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
         worker_count = vm_host_count - 1
         worker_cores = os.cpu_count()
