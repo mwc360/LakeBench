@@ -151,7 +151,8 @@ class ELTBench(BaseBenchmark):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(
                     parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
-                    table_name=table_name
+                    table_name=table_name,
+                    table_is_precreated=False
                 )
         with self.timer(phase="Create fact table", test_item='total_sales_fact', engine=self.engine):
             self.benchmark_impl.create_total_sales_fact()

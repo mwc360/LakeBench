@@ -36,9 +36,9 @@ class Polars(BaseEngine):
         self.sql = pl.SQLContext()
 
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or self._FABRIC_USD_COST_PER_VCORE_HOUR
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
 
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
         table_df = self.pl.scan_parquet(
             posixpath.join(parquet_folder_path, '*.parquet'), 
             storage_options=self.storage_options

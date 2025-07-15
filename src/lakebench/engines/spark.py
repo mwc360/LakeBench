@@ -1,6 +1,7 @@
 from .base import BaseEngine
 import os
 from typing import Optional
+import posixpath
 
 class Spark(BaseEngine):
     """
@@ -26,19 +27,51 @@ class Spark(BaseEngine):
         """
         super().__init__()
         from pyspark.sql import SparkSession
-        if spark_measure_telemetry:
-            from sparkmeasure import StageMetrics
-        self.spark_measure_telemetry = spark_measure_telemetry
-
         import pyspark.sql.functions as sf
         self.sf = sf
         self.spark = SparkSession.builder.getOrCreate()
+        if spark_measure_telemetry:
+            try:
+                from sparkmeasure import StageMetrics
+                self.capture_metrics = StageMetrics(self.spark)
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("`sparkmeasure` is not installed, either disable the `spark_measure_telemetry` flag, run `%pip install sparkmeasure==0.24.0`, or install LakeBench with the sparkmeasure option: `%pip install lakebench[sparkmeasure]`.")
+        self.spark_measure_telemetry = spark_measure_telemetry
+
         self.version: str = self.spark.sparkContext.version
 
         self.catalog_name = catalog_name
         self.schema_name = schema_name
+        self.schema_abfss_path = schema_abfss_path
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
         self.cost_per_vcore_hour = cost_per_vcore_hour
+        self.spark_configs = self.__get_spark_session_configs()
+        self.extended_engine_metadata.update({
+            'parquet.block.size': self.spark.sparkContext._jsc.hadoopConfiguration().get("parquet.block.size"),
+        })
+        spark_configs_to_log = {k: v for k, v in self.spark_configs.items() if k in [
+            'spark.executor.memory',
+            'spark.databricks.delta.optimizeWrite.enabled',
+            'spark.databricks.delta.optimizeWrite.binSize',
+            'spark.sql.autoBroadcastJoinThreshold',
+            'spark.sql.sources.parallelPartitionDiscovery.parallelism',
+            'spark.sql.cbo.enabled',
+            'spark.sql.shuffle.partitions'
+        ]}
+
+        self.extended_engine_metadata.update(spark_configs_to_log)
+
+    def __get_spark_session_configs(self) -> dict:
+        scala_map = self.spark.conf._jconf.getAll()
+        spark_conf_dict = {}
+ 
+        iterator = scala_map.iterator()
+        while iterator.hasNext():
+            entry = iterator.next()
+            key = entry._1()
+            value = entry._2()
+            spark_conf_dict[key] = value
+        return spark_conf_dict
 
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """

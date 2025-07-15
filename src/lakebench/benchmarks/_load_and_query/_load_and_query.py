@@ -196,18 +196,20 @@ class _LoadAndQuery(BaseBenchmark):
         if self.engine.SUPPORTS_SCHEMA_PREP:
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
-            with self.timer(phase="Load", test_item=table_name, engine=self.engine):
+            with self.timer(phase="Load", test_item=table_name, engine=self.engine) as tc:
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to load the table
-                    self.benchmark_impl.load_parquet_to_delta(
+                    tc.execution_telemetry = self.benchmark_impl.load_parquet_to_delta(
                         table_name=table_name, 
-                        source_data_path=self.source_data_path
+                        source_data_path=self.source_data_path,
+                        table_is_precreated=True
                     )
                 else:
                     # Otherwise, use the generic load method
-                    self.engine.load_parquet_to_delta(
+                    tc.execution_telemetry = self.engine.load_parquet_to_delta(
                         parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
-                        table_name=table_name
+                        table_name=table_name,
+                        table_is_precreated=True
                     )
         self.post_results()
 
@@ -220,13 +222,13 @@ class _LoadAndQuery(BaseBenchmark):
                 self.engine.register_table(table_name)
         for query_name in self.query_list:
             prepped_query = self._return_query_definition(query_name)
-            with self.timer(phase="Query", test_item=query_name, engine=self.engine):
+            with self.timer(phase="Query", test_item=query_name, engine=self.engine) as tc:
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to perform the query
-                    execute_query = self.benchmark_impl.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.benchmark_impl.execute_sql_query(prepped_query)
                 else:
                     # Otherwise, use the generic query method
-                    execute_query = self.engine.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.engine.execute_sql_query(prepped_query)
         self.post_results()
 
     def _run_power_test(self):

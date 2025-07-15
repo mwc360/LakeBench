@@ -5,7 +5,7 @@ class SparkClickBench:
         
         self.engine = engine
 
-    def load_parquet_to_delta(self, table_name: str, source_data_path: str):
+    def load_parquet_to_delta(self, table_name: str, source_data_path: str, table_is_precreated: bool = False):
         """
         Loads the ClickBench parquet data into Delta format using Spark.
 

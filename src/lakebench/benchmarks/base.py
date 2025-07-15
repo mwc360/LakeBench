@@ -58,11 +58,12 @@ class BaseBenchmark(ABC):
         ('test_item', 'STRING'),
         ('start_datetime', 'TIMESTAMP'),
         ('duration_ms', 'INT'),
-        ('estimated_job_cost', 'DECIMAL(18,10)'),
+        ('retail_job_cost', 'DECIMAL(18,10)'),
         ('iteration', 'TINYINT'),
         ('success', 'BOOLEAN'),
         ('error_message', 'STRING'),
-        ('engine_metadata', 'MAP<STRING, STRING>')
+        ('engine_properties', 'MAP<STRING, STRING>'),      # Additional Platform configs/metadata
+        ('execution_telemetry', 'MAP<STRING, STRING>')    # Test-item execution details
     ]
     VERSION = ''
 
@@ -139,12 +140,14 @@ class BaseBenchmark(ABC):
                 'test_item': test_item,
                 'start_datetime': start_datetime,
                 'duration_ms': duration_ms,
-                'estimated_job_cost': self.engine.get_job_cost(duration_ms), 
+                'retail_job_cost': self.engine.get_job_cost(duration_ms), 
                 'iteration': iteration,
                 'success': success,
-                'error_message': error_message
+                'error_message': error_message,
+                'engine_properties': self.engine.extended_engine_metadata,
+                'execution_telemetry': execution_telemetry
             }
-            for phase, test_item, start_datetime, duration_ms, iteration, success, error_message in self.timer.results
+            for phase, test_item, start_datetime, duration_ms, iteration, success, error_message, execution_telemetry in self.timer.results
         ]
         self.results.extend(result_array)
 

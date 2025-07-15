@@ -31,9 +31,13 @@ class BaseEngine(ABC):
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_SCHEMA_PREP = False
-    _FABRIC_USD_COST_PER_VCORE_HOUR = 0.09  # cost in East US 2 as of July 2025
     
     def __init__(self):
+        self.version: str = ''
+        self.cost_per_vcore_hour: Optional[float] = None
+        self.cost_per_hour: Optional[float] = None
+        self.extended_engine_metadata = {}
+
         try:
             from IPython.core.getipython import get_ipython
             self.notebookutils = get_ipython().user_ns.get("notebookutils")
@@ -41,9 +45,20 @@ class BaseEngine(ABC):
         except:
             self.is_fabric = False
 
-        self.version: str = ''
-        self.cost_per_vcore_hour: Optional[float] = None
-                  
+        if self.is_fabric:
+            import sempy.fabric as fabric
+            fabric_rest = fabric.FabricRestClient()
+            workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
+            self.region = fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
+            self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
+            self.extended_engine_metadata.update({'region': self.region})
+
+    def _get_vm_retail_rate(self, region: str, sku: str, spot: bool = False) -> float:
+        import requests
+        query = f"armRegionName eq '{region}' and serviceName eq 'Microsoft Fabric' and skuName eq '{sku}'"
+        api_url = "https://prices.azure.com/api/retail/prices?"
+        return requests.get(api_url, params={'$filter': query}).json()['Items'][0]['retailPrice'] / 2
+    
     def get_total_cores(self) -> int:
         """
         Returns the total number of CPU cores available on the system.
@@ -63,14 +78,15 @@ class BaseEngine(ABC):
         """
         Returns the cost per hour for compute as a Decimal.
         
-        If `cost_per_vcore_hour` is provided, it calculates the cost based on the total cores.
+        If `cost_per_vcore_hour` or `cost_per_hour` is provided, it calculates the job cost.
         Otherwise, it returns None.
         """
-        if self.cost_per_vcore_hour is None:
+        if self.cost_per_hour is None and self.cost_per_vcore_hour is not None:
+            self.cost_per_hour = Decimal(self.get_total_cores()) * Decimal(self.cost_per_vcore_hour)
+        elif self.cost_per_hour is None:
             return None
 
-        cost_per_hour = Decimal(self.get_total_cores()) * Decimal(self.cost_per_vcore_hour)
-        job_cost = cost_per_hour * Decimal(duration_ms) / Decimal(3600000)  # Convert ms to hours
+        job_cost = Decimal(self.cost_per_hour) * (Decimal(duration_ms) / Decimal(3600000))  # Convert ms to hours
         return job_cost.quantize(Decimal('0.0000000000'))  # Ensure precision matches DECIMAL(18,10)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
@@ -122,21 +138,35 @@ class BaseEngine(ABC):
         schema = self._convert_generic_to_specific_schema(generic_schema=generic_schema)
 
         # Extract engine_metadata and convert to map format, otherwise is interpreted as a Struct
-        index = schema.get_field_index("engine_metadata")
+        index = schema.get_field_index("engine_properties")
         schema = schema.remove(index)
-        map_data = []
+        index = schema.get_field_index("execution_telemetry")
+        schema = schema.remove(index)
+
+        engine_map_data = []
+        execution_map_data = []
         for result in results:
-            metadata = result.pop('engine_metadata', {})
-            if metadata:
-                map_items = [(str(k), str(v)) for k, v in metadata.items()]
+            engine_properties = result.pop('engine_properties', {})
+            if engine_properties:
+                map_items = [(str(k), str(v)) for k, v in engine_properties.items()]
             else:
                 map_items = []
 
-            map_data.append(map_items)
+            engine_map_data.append(map_items)
+
+            execution_telemetry = result.pop('execution_telemetry', {})
+            if execution_telemetry:
+                execution_map_items = [(str(k), str(v)) for k, v in execution_telemetry.items()]
+            else:
+                execution_map_items = []
+
+            execution_map_data.append(execution_map_items)
 
         table = pa.Table.from_pylist(results, schema)
-        map_array = pa.array(map_data, type=pa.map_(pa.string(), pa.string()))
-        table = table.append_column('engine_metadata', map_array)
+        engine_map_array = pa.array(engine_map_data, type=pa.map_(pa.string(), pa.string()))
+        execution_map_array = pa.array(execution_map_data, type=pa.map_(pa.string(), pa.string()))
+        table = table.append_column('engine_properties', engine_map_array)
+        table = table.append_column('execution_telemetry', execution_map_array)
 
         if version('deltalake').startswith('0.'):
             DeltaRs().write_deltalake(
