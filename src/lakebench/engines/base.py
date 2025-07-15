@@ -51,7 +51,7 @@ class BaseEngine(ABC):
             workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
             self.region = fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
-            self.extended_engine_metadata.update({'region': self.region})
+            self.extended_engine_metadata.update({'compute_region': self.region})
 
     def _get_vm_retail_rate(self, region: str, sku: str, spot: bool = False) -> float:
         import requests
