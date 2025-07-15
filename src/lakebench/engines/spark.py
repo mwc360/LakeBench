@@ -121,9 +121,12 @@ class Spark(BaseEngine):
 
         return cluster_config
     
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
         df = self.spark.read.parquet(parquet_folder_path)
-        df.write.format('delta').mode("append").saveAsTable(table_name)
+        if table_is_precreated:
+            df.write.insertInto(table_name, overwrite=True)
+        else:
+            df.write.format('delta').mode("append").saveAsTable(table_name)
     
     def execute_sql_query(self, query: str):
         execute_sql = self.spark.sql(query).collect()
