@@ -66,14 +66,14 @@ class BaseBenchmark(ABC):
     ]
     VERSION = ''
 
-    def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False):
+    def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False, run_id: Optional[str] = None):
         self.engine = engine
         self.scenario_name = scenario_name
         self.result_abfss_path = result_abfss_path
         self.save_results = save_results
 
         self.header_detail_dict = {
-            'run_id': str(uuid.uuid1()),
+            'run_id': run_id if run_id is not None else str(uuid.uuid1()),
             'run_datetime': datetime.now(),
             'lakebench_version': version('lakebench'),
             'engine': type(engine).__name__,

@@ -56,10 +56,11 @@ class _LoadAndQuery(BaseBenchmark):
             parquet_mount_path: Optional[str] = None,
             parquet_abfss_path: Optional[str] = None,
             result_abfss_path: Optional[str] = None,
-            save_results: bool = False
+            save_results: bool = False,
+            run_id: Optional[str] = None
             ):
         self.scale_factor = scale_factor
-        super().__init__(engine, scenario_name, result_abfss_path, save_results)
+        super().__init__(engine, scenario_name, result_abfss_path, save_results, run_id=run_id)
         if query_list is not None:
             expanded_query_list = []
             for query in query_list:
