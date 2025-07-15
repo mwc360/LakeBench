@@ -17,6 +17,7 @@ class Spark(BaseEngine):
             self,
             catalog_name: Optional[str],
             schema_name: str,
+            schema_abfss_path: Optional[str] = None,
             spark_measure_telemetry: bool = False,
             cost_per_vcore_hour: Optional[float] = None
             ):
@@ -43,9 +44,11 @@ class Spark(BaseEngine):
         """
         Prepare an empty schema in the lakehouse.
         """
+        location_str = f"LOCATION '{posixpath.join(self.schema_abfss_path, self.schema_name)}'" if self.schema_abfss_path is not None else ''
+
         if drop_before_create:
             self.spark.sql(f"DROP SCHEMA IF EXISTS {self.full_catalog_schema_reference} CASCADE")
-        self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference}")
+        self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference} {location_str}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
     def _convert_generic_to_specific_schema(self, generic_schema: list):
