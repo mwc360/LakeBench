@@ -113,7 +113,13 @@ class Spark(BaseEngine):
         # Use default order of columns in dictionary
         columns = list(results[0].keys())
         df = self.spark.createDataFrame(results, schema=schema).select(*columns)
-        df.write.option("mergeSchema", "true").option("delta.enableDeletionVectors", "false").format("delta").mode("append").save(abfss_path)
+        df.write.format("delta") \
+            .option("mergeSchema", "true") \
+            .option("delta.enableDeletionVectors", "false") \
+            .option("delta.autoOptimize.autoCompact", "true") \
+            .option("delta.autoOptimize.optimizeWrite", "true") \
+            .mode("append") \
+            .save(abfss_path)
 
     def get_total_cores(self) -> int:
         """
