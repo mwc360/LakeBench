@@ -20,7 +20,8 @@ class Spark(BaseEngine):
             schema_name: str,
             schema_abfss_path: Optional[str] = None,
             spark_measure_telemetry: bool = False,
-            cost_per_vcore_hour: Optional[float] = None
+            cost_per_vcore_hour: Optional[float] = None,
+            compute_stats_all_cols: bool = False
             ):
         """
         Initialize the SparkEngine with a Spark session.
@@ -60,6 +61,10 @@ class Spark(BaseEngine):
         ]}
 
         self.extended_engine_metadata.update(spark_configs_to_log)
+
+        self.compute_stats_all_cols = compute_stats_all_cols
+        if self.compute_stats_all_cols:
+            self.run_analyze_after_load = True
 
     def __get_spark_session_configs(self) -> dict:
         scala_map = self.spark.conf._jconf.getAll()
@@ -166,7 +171,10 @@ class Spark(BaseEngine):
             df.write.insertInto(table_name, overwrite=True)
         else:
             df.write.format('delta').mode("append").saveAsTable(table_name)
-    
+
+        if self.run_analyze_after_load:
+            self.spark.sql(f"ANALYZE TABLE {table_name} COMPUTE STATISTICS FOR ALL COLUMNS;")    
+
     def execute_sql_query(self, query: str):
         execute_sql = self.spark.sql(query).collect()
     

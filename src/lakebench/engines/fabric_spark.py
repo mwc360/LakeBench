@@ -18,7 +18,8 @@ class FabricSpark(Spark):
             lakehouse_name: str, 
             lakehouse_schema_name: str,
             spark_measure_telemetry: bool = False,
-            cost_per_vcore_hour: Optional[float] = None
+            cost_per_vcore_hour: Optional[float] = None,
+            compute_stats_all_cols: bool = False
             ):
         """
         Initialize the SparkEngine with a Spark session.
@@ -30,7 +31,8 @@ class FabricSpark(Spark):
             catalog_name=self.lakehouse_name, 
             schema_name=self.lakehouse_schema_name, 
             spark_measure_telemetry=spark_measure_telemetry, 
-            cost_per_vcore_hour=cost_per_vcore_hour
+            cost_per_vcore_hour=cost_per_vcore_hour,
+            compute_stats_all_cols=compute_stats_all_cols
         )
 
         self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
@@ -62,3 +64,11 @@ class FabricSpark(Spark):
         ]}
 
         self.extended_engine_metadata.update(spark_configs_to_log)
+
+        self.compute_stats_all_cols = compute_stats_all_cols
+        if self.compute_stats_all_cols:
+            self.run_analyze_after_load = False
+            # Enable auto stats collection
+            self.spark.conf.set("spark.microsoft.delta.stats.collect.extended", "true")
+            self.spark.conf.set("spark.microsoft.delta.stats.injection.enabled", "true")
+            self.spark.conf.set("spark.microsoft.delta.stats.collect.extended.property.setAtTableCreation", "true")
