@@ -9,6 +9,7 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 
 import importlib.resources
+import inspect
 import posixpath
 
 class _LoadAndQuery(BaseBenchmark):
@@ -22,7 +23,7 @@ class _LoadAndQuery(BaseBenchmark):
         Daft: None,
         Polars: None
     }
-    MODE_REGISTRY = ['load', 'query', 'power_test', 'query_and_load']
+    MODE_REGISTRY = ['load', 'query', 'power_test', 'load_and_query']
     BENCHMARK_NAME = ''
     TABLE_REGISTRY = [
         'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
@@ -117,17 +118,19 @@ class _LoadAndQuery(BaseBenchmark):
             - 'load': Executes the load test.
             - 'query': Executes the query test.
             - 'power_test': Executes the power test (default).
-            - 'query_and_load': Alias for 'power_test', runs both load and query tests.
+            - 'load_and_query': Alias for 'power_test', runs both load and query tests.
 
         Notes
         -----
         The `MODE_REGISTRY` attribute contains the list of supported modes.
         """
+        self.mode = 'load_and_query' if mode in ('power_test', 'load_and_query') else mode
+
         if mode == 'load':
             self._run_load_test()
         elif mode == 'query':
             self._run_query_test()
-        elif mode in ('power_test', 'query_and_load'):
+        elif mode in ('power_test', 'load_and_query'):
             self._run_power_test()
         else:
             raise ValueError(f"Unknown mode '{mode}'. Supported modes: {self.MODE_REGISTRY}.")
@@ -193,6 +196,10 @@ class _LoadAndQuery(BaseBenchmark):
           for each table.
         - Results are posted after all tables have been processed.
         """
+        # set the mode if the module is being called directly
+        if inspect.currentframe().f_back.f_code.co_name not in ('run', '_run_power_test'):
+            self.mode = 'load'
+
         if self.engine.SUPPORTS_SCHEMA_PREP:
             self._prepare_schema()
         for table_name in self.TABLE_REGISTRY:
@@ -217,6 +224,10 @@ class _LoadAndQuery(BaseBenchmark):
         """
         Executes a series of SQL queries defined in the `query_list` attribute.
         """
+        # set the mode if the module is being called directly
+        if inspect.currentframe().f_back.f_code.co_name not in ('run', '_run_power_test'):
+            self.mode = 'query'
+
         if isinstance(self.engine, (DuckDB, Daft, Polars)):
             for table_name in self.TABLE_REGISTRY:
                 self.engine.register_table(table_name)
@@ -239,6 +250,8 @@ class _LoadAndQuery(BaseBenchmark):
         1. Load phase: Loads data into the target system.
         2. Query phase: Executes configured SQL queries to evaluate performance.
         """
+        self.mode = 'load_and_query'
+
         self._run_load_test()
         self._run_query_test()
 

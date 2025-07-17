@@ -147,6 +147,8 @@ class ELTBench(BaseBenchmark):
         ----------
         None
         """
+        self.mode = 'light'
+        
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
                 self.engine.load_parquet_to_delta(

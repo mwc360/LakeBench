@@ -50,6 +50,7 @@ class BaseBenchmark(ABC):
         ('engine_version', 'STRING'),
         ('benchmark', 'STRING'),
         ('benchmark_version', 'STRING'),
+        ('mode', 'STRING'),
         ('scale_factor', 'INT'),
         ('scenario', 'STRING'),
         ('total_cores', 'SMALLINT'),
@@ -89,6 +90,7 @@ class BaseBenchmark(ABC):
         self.timer = timer
         self.timer.clear_results()
         self.results = []
+        self.mode : str = None
 
     @classmethod
     def register_engine(cls, engine_class: Type[BaseEngine], benchmark_impl: Optional[Type] = None):
@@ -136,6 +138,7 @@ class BaseBenchmark(ABC):
         result_array = [
             {
                 **self.header_detail_dict,
+                'mode': self.mode.lower() if self.mode else None,
                 'phase': phase,
                 'test_item': test_item,
                 'start_datetime': start_datetime,
