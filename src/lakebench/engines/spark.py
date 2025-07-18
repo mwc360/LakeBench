@@ -57,7 +57,8 @@ class Spark(BaseEngine):
             'spark.sql.autoBroadcastJoinThreshold',
             'spark.sql.sources.parallelPartitionDiscovery.parallelism',
             'spark.sql.cbo.enabled',
-            'spark.sql.shuffle.partitions'
+            'spark.sql.shuffle.partitions',
+            'spark.task.cpus'
         ]}
 
         self.extended_engine_metadata.update(spark_configs_to_log)
