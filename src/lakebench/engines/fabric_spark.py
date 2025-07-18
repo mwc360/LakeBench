@@ -66,8 +66,8 @@ class FabricSpark(Spark):
         self.extended_engine_metadata.update(spark_configs_to_log)
 
         self.compute_stats_all_cols = compute_stats_all_cols
+        self.run_analyze_after_load = False # Fabric Spark supports auto stats collection
         if self.compute_stats_all_cols:
-            self.run_analyze_after_load = False
             # Enable auto stats collection
             self.spark.conf.set("spark.microsoft.delta.stats.collect.extended", "true")
             self.spark.conf.set("spark.microsoft.delta.stats.injection.enabled", "true")

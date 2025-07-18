@@ -63,8 +63,7 @@ class Spark(BaseEngine):
         self.extended_engine_metadata.update(spark_configs_to_log)
 
         self.compute_stats_all_cols = compute_stats_all_cols
-        if self.compute_stats_all_cols:
-            self.run_analyze_after_load = True
+        self.run_analyze_after_load = self.compute_stats_all_cols
 
     def __get_spark_session_configs(self) -> dict:
         scala_map = self.spark.conf._jconf.getAll()
@@ -151,7 +150,7 @@ class Spark(BaseEngine):
         as_max_workers = sc_conf_dict['spark.dynamicAllocation.maxExecutors'] if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
         as_enabled = True if as_min_workers != as_max_workers and sc_conf_dict.get('spark.dynamicAllocation.minExecutors', None) != sc_conf_dict.get('spark.dynamicAllocation.maxExecutors', None) else False
         type = "SingleNode" if vm_host_count == 1 and not as_enabled else 'MultiNode'
-        workers_word = 'Workers' if worker_count > 1 or int(as_max_workers) > 1  else 'Worker'
+        workers_word = 'Workers' if worker_count > 1 or (as_max_workers is not None and int(as_max_workers) > 1)  else 'Worker'
         executors_per_worker = int(executor_count / worker_count) if worker_count > 0 else 1
         executors_word = 'Executors' if executors_per_worker > 1 else 'Executor'
         executor_str = f"({executors_per_worker} x {executor_cores}vCore {executors_word}{' ea.' if type != 'SingleNode' else ''})"
