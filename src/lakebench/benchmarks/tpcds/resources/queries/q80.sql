@@ -8,16 +8,16 @@ WITH ssr AS (
   LEFT OUTER JOIN store_returns
     ON (
       ss_item_sk = sr_item_sk AND ss_ticket_number = sr_ticket_number
-    ), date_dim, store, item, promotion
+    )
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
+  JOIN store ON ss_store_sk = s_store_sk
+  JOIN item ON ss_item_sk = i_item_sk
+  JOIN promotion ON ss_promo_sk = p_promo_sk
   WHERE
-    ss_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND ss_store_sk = s_store_sk
-    AND ss_item_sk = i_item_sk
     AND i_current_price > 50
-    AND ss_promo_sk = p_promo_sk
     AND p_channel_tv = 'N'
   GROUP BY
     s_store_id
@@ -31,16 +31,16 @@ WITH ssr AS (
   LEFT OUTER JOIN catalog_returns
     ON (
       cs_item_sk = cr_item_sk AND cs_order_number = cr_order_number
-    ), date_dim, catalog_page, item, promotion
+    )
+  JOIN date_dim ON cs_sold_date_sk = d_date_sk
+  JOIN catalog_page ON cs_catalog_page_sk = cp_catalog_page_sk
+  JOIN item ON cs_item_sk = i_item_sk
+  JOIN promotion ON cs_promo_sk = p_promo_sk
   WHERE
-    cs_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND cs_catalog_page_sk = cp_catalog_page_sk
-    AND cs_item_sk = i_item_sk
     AND i_current_price > 50
-    AND cs_promo_sk = p_promo_sk
     AND p_channel_tv = 'N'
   GROUP BY
     cp_catalog_page_id
@@ -54,16 +54,16 @@ WITH ssr AS (
   LEFT OUTER JOIN web_returns
     ON (
       ws_item_sk = wr_item_sk AND ws_order_number = wr_order_number
-    ), date_dim, web_site, item, promotion
+    )
+  JOIN date_dim ON ws_sold_date_sk = d_date_sk
+  JOIN web_site ON ws_web_site_sk = web_site_sk
+  JOIN item ON ws_item_sk = i_item_sk
+  JOIN promotion ON ws_promo_sk = p_promo_sk
   WHERE
-    ws_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND ws_web_site_sk = web_site_sk
-    AND ws_item_sk = i_item_sk
     AND i_current_price > 50
-    AND ws_promo_sk = p_promo_sk
     AND p_channel_tv = 'N'
   GROUP BY
     web_site_id

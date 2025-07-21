@@ -3,13 +3,13 @@ WITH ss AS (
     s_store_sk,
     SUM(ss_ext_sales_price) AS sales,
     SUM(ss_net_profit) AS profit
-  FROM store_sales, date_dim, store
+  FROM store_sales
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
+  JOIN store ON ss_store_sk = s_store_sk
   WHERE
-    ss_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND ss_store_sk = s_store_sk
   GROUP BY
     s_store_sk
 ), sr AS (
@@ -17,13 +17,13 @@ WITH ss AS (
     s_store_sk,
     SUM(sr_return_amt) AS returns,
     SUM(sr_net_loss) AS profit_loss
-  FROM store_returns, date_dim, store
+  FROM store_returns
+  JOIN date_dim ON sr_returned_date_sk = d_date_sk
+  JOIN store ON sr_store_sk = s_store_sk
   WHERE
-    sr_returned_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND sr_store_sk = s_store_sk
   GROUP BY
     s_store_sk
 ), cs AS (
@@ -31,10 +31,10 @@ WITH ss AS (
     cs_call_center_sk,
     SUM(cs_ext_sales_price) AS sales,
     SUM(cs_net_profit) AS profit
-  FROM catalog_sales, date_dim
+  FROM catalog_sales
+  JOIN date_dim ON cs_sold_date_sk = d_date_sk
   WHERE
-    cs_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
   GROUP BY
@@ -44,10 +44,10 @@ WITH ss AS (
     cr_call_center_sk,
     SUM(cr_return_amount) AS returns,
     SUM(cr_net_loss) AS profit_loss
-  FROM catalog_returns, date_dim
+  FROM catalog_returns
+  JOIN date_dim ON cr_returned_date_sk = d_date_sk
   WHERE
-    cr_returned_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
   GROUP BY
@@ -57,13 +57,13 @@ WITH ss AS (
     wp_web_page_sk,
     SUM(ws_ext_sales_price) AS sales,
     SUM(ws_net_profit) AS profit
-  FROM web_sales, date_dim, web_page
+  FROM web_sales
+  JOIN date_dim ON ws_sold_date_sk = d_date_sk
+  JOIN web_page ON ws_web_page_sk = wp_web_page_sk
   WHERE
-    ws_sold_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND ws_web_page_sk = wp_web_page_sk
   GROUP BY
     wp_web_page_sk
 ), wr AS (
@@ -71,13 +71,13 @@ WITH ss AS (
     wp_web_page_sk,
     SUM(wr_return_amt) AS returns,
     SUM(wr_net_loss) AS profit_loss
-  FROM web_returns, date_dim, web_page
+  FROM web_returns
+  JOIN date_dim ON wr_returned_date_sk = d_date_sk
+  JOIN web_page ON wr_web_page_sk = wp_web_page_sk
   WHERE
-    wr_returned_date_sk = d_date_sk
-    AND d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
+    d_date BETWEEN CAST('1999-08-29' AS DATE) AND (
       DATE_ADD(CAST('1999-08-29' AS DATE), 30)
     )
-    AND wr_web_page_sk = wp_web_page_sk
   GROUP BY
     wp_web_page_sk
 )
@@ -108,7 +108,8 @@ FROM (
     (
       profit - profit_loss
     ) AS profit
-  FROM cs, cr
+  FROM cs
+  JOIN cr ON cs.cs_call_center_sk = cr.cr_call_center_sk
   UNION ALL
   SELECT
     'web channel' AS channel,

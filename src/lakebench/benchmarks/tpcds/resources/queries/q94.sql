@@ -2,15 +2,15 @@ SELECT
   COUNT(DISTINCT ws_order_number) AS `order count`,
   SUM(ws_ext_ship_cost) AS `total shipping cost`,
   SUM(ws_net_profit) AS `total net profit`
-FROM web_sales AS ws1, date_dim, customer_address, web_site
+FROM web_sales AS ws1
+JOIN date_dim ON ws1.ws_ship_date_sk = d_date_sk
+JOIN customer_address ON ws1.ws_ship_addr_sk = ca_address_sk
+JOIN web_site ON ws1.ws_web_site_sk = web_site_sk
 WHERE
   d_date BETWEEN '1999-5-01' AND (
     DATE_ADD(CAST('1999-5-01' AS DATE), 60)
   )
-  AND ws1.ws_ship_date_sk = d_date_sk
-  AND ws1.ws_ship_addr_sk = ca_address_sk
   AND ca_state = 'TX'
-  AND ws1.ws_web_site_sk = web_site_sk
   AND web_company_name = 'pri'
   AND EXISTS(
     SELECT

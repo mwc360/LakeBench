@@ -4,11 +4,11 @@ SELECT
   i_class,
   GROUPING(i_category) + GROUPING(i_class) AS lochierarchy,
   RANK() OVER (PARTITION BY GROUPING(i_category) + GROUPING(i_class), CASE WHEN GROUPING(i_class) = 0 THEN i_category END ORDER BY SUM(ws_net_paid) DESC) AS rank_within_parent
-FROM web_sales, date_dim AS d1, item
+FROM web_sales
+JOIN date_dim AS d1 ON d1.d_date_sk = ws_sold_date_sk
+JOIN item ON i_item_sk = ws_item_sk
 WHERE
   d1.d_month_seq BETWEEN 1183 AND 1183 + 11
-  AND d1.d_date_sk = ws_sold_date_sk
-  AND i_item_sk = ws_item_sk
 GROUP BY
 ROLLUP (
   i_category,

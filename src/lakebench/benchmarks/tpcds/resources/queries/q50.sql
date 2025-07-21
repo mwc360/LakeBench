@@ -51,16 +51,16 @@ SELECT
   SUM(CASE WHEN (
     sr_returned_date_sk - ss_sold_date_sk > 120
   ) THEN 1 ELSE 0 END) AS `>120 days`
-FROM store_sales, store_returns, store, date_dim AS d1, date_dim AS d2
+FROM store_sales
+JOIN store_returns ON ss_ticket_number = sr_ticket_number
+  AND ss_item_sk = sr_item_sk
+  AND ss_customer_sk = sr_customer_sk
+JOIN store ON ss_store_sk = s_store_sk
+JOIN date_dim AS d1 ON ss_sold_date_sk = d1.d_date_sk
+JOIN date_dim AS d2 ON sr_returned_date_sk = d2.d_date_sk
 WHERE
   d2.d_year = 2000
   AND d2.d_moy = 10
-  AND ss_ticket_number = sr_ticket_number
-  AND ss_item_sk = sr_item_sk
-  AND ss_sold_date_sk = d1.d_date_sk
-  AND sr_returned_date_sk = d2.d_date_sk
-  AND ss_customer_sk = sr_customer_sk
-  AND ss_store_sk = s_store_sk
 GROUP BY
   s_store_name,
   s_company_id,

@@ -23,12 +23,12 @@ FROM (
       d_moy,
       s_store_id,
       SUM(COALESCE(ss_sales_price * ss_quantity, 0)) AS sumsales
-    FROM store_sales, date_dim, store, item
+    FROM store_sales
+    JOIN date_dim ON ss_sold_date_sk = d_date_sk
+    JOIN store ON ss_store_sk = s_store_sk
+    JOIN item ON ss_item_sk = i_item_sk
     WHERE
-      ss_sold_date_sk = d_date_sk
-      AND ss_item_sk = i_item_sk
-      AND ss_store_sk = s_store_sk
-      AND d_month_seq BETWEEN 1183 AND 1183 + 11
+      d_month_seq BETWEEN 1183 AND 1183 + 11
     GROUP BY
     ROLLUP (
       i_category,

@@ -10,12 +10,12 @@ FROM (
     ss_ticket_number,
     ss_customer_sk,
     COUNT(*) AS cnt
-  FROM store_sales, date_dim, store, household_demographics
+  FROM store_sales
+  JOIN date_dim ON store_sales.ss_sold_date_sk = date_dim.d_date_sk
+  JOIN store ON store_sales.ss_store_sk = store.s_store_sk
+  JOIN household_demographics ON store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
   WHERE
-    store_sales.ss_sold_date_sk = date_dim.d_date_sk
-    AND store_sales.ss_store_sk = store.s_store_sk
-    AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
-    AND date_dim.d_dom BETWEEN 1 AND 2
+    date_dim.d_dom BETWEEN 1 AND 2
     AND (
       household_demographics.hd_buy_potential = '1001-5000'
       OR household_demographics.hd_buy_potential = '0-500'
@@ -31,9 +31,10 @@ FROM (
   GROUP BY
     ss_ticket_number,
     ss_customer_sk
-) AS dj, customer
+) AS dj
+JOIN customer ON ss_customer_sk = c_customer_sk
 WHERE
-  ss_customer_sk = c_customer_sk AND cnt BETWEEN 1 AND 5
+  cnt BETWEEN 1 AND 5
 ORDER BY
   cnt DESC,
   c_last_name ASC

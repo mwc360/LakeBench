@@ -3,15 +3,15 @@ SELECT
   cc_name AS Call_Center_Name,
   cc_manager AS Manager,
   SUM(cr_net_loss) AS Returns_Loss
-FROM call_center, catalog_returns, date_dim, customer, customer_address, customer_demographics, household_demographics
+FROM call_center
+JOIN catalog_returns ON cr_call_center_sk = cc_call_center_sk
+JOIN date_dim ON cr_returned_date_sk = d_date_sk
+JOIN customer ON cr_returning_customer_sk = c_customer_sk
+JOIN customer_address ON ca_address_sk = c_current_addr_sk
+JOIN customer_demographics ON cd_demo_sk = c_current_cdemo_sk
+JOIN household_demographics ON hd_demo_sk = c_current_hdemo_sk
 WHERE
-  cr_call_center_sk = cc_call_center_sk
-  AND cr_returned_date_sk = d_date_sk
-  AND cr_returning_customer_sk = c_customer_sk
-  AND cd_demo_sk = c_current_cdemo_sk
-  AND hd_demo_sk = c_current_hdemo_sk
-  AND ca_address_sk = c_current_addr_sk
-  AND d_year = 2002
+  d_year = 2002
   AND d_moy = 11
   AND (
     (

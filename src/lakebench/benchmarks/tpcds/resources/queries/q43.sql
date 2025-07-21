@@ -22,11 +22,11 @@ SELECT
   SUM(CASE WHEN (
     d_day_name = 'Saturday'
   ) THEN ss_sales_price ELSE NULL END) AS sat_sales
-FROM date_dim, store_sales, store
+FROM date_dim
+JOIN store_sales ON d_date_sk = ss_sold_date_sk
+JOIN store ON s_store_sk = ss_store_sk
 WHERE
-  d_date_sk = ss_sold_date_sk
-  AND s_store_sk = ss_store_sk
-  AND s_gmt_offset = -6
+  s_gmt_offset = -6
   AND d_year = 1999
 GROUP BY
   s_store_name,

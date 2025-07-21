@@ -3,9 +3,8 @@ WITH cs_ui AS (
     cs_item_sk,
     SUM(cs_ext_list_price) AS sale,
     SUM(cr_refunded_cash + cr_reversed_charge + cr_store_credit) AS refund
-  FROM catalog_sales, catalog_returns
-  WHERE
-    cs_item_sk = cr_item_sk AND cs_order_number = cr_order_number
+  FROM catalog_sales
+  JOIN catalog_returns ON cs_item_sk = cr_item_sk AND cs_order_number = cr_order_number
   GROUP BY
     cs_item_sk
   HAVING
@@ -31,27 +30,27 @@ WITH cs_ui AS (
     SUM(ss_wholesale_cost) AS s1,
     SUM(ss_list_price) AS s2,
     SUM(ss_coupon_amt) AS s3
-  FROM store_sales, store_returns, cs_ui, date_dim AS d1, date_dim AS d2, date_dim AS d3, store, customer, customer_demographics AS cd1, customer_demographics AS cd2, promotion, household_demographics AS hd1, household_demographics AS hd2, customer_address AS ad1, customer_address AS ad2, income_band AS ib1, income_band AS ib2, item
-  WHERE
-    ss_store_sk = s_store_sk
-    AND ss_sold_date_sk = d1.d_date_sk
-    AND ss_customer_sk = c_customer_sk
-    AND ss_cdemo_sk = cd1.cd_demo_sk
-    AND ss_hdemo_sk = hd1.hd_demo_sk
-    AND ss_addr_sk = ad1.ca_address_sk
-    AND ss_item_sk = i_item_sk
-    AND ss_item_sk = sr_item_sk
+  FROM store_sales
+  JOIN store ON ss_store_sk = s_store_sk
+  JOIN date_dim AS d1 ON ss_sold_date_sk = d1.d_date_sk
+  JOIN customer ON ss_customer_sk = c_customer_sk
+  JOIN customer_demographics AS cd1 ON ss_cdemo_sk = cd1.cd_demo_sk
+  JOIN household_demographics AS hd1 ON ss_hdemo_sk = hd1.hd_demo_sk
+  JOIN customer_address AS ad1 ON ss_addr_sk = ad1.ca_address_sk
+  JOIN item ON ss_item_sk = i_item_sk
+  JOIN store_returns ON ss_item_sk = sr_item_sk
     AND ss_ticket_number = sr_ticket_number
-    AND ss_item_sk = cs_ui.cs_item_sk
-    AND c_current_cdemo_sk = cd2.cd_demo_sk
-    AND c_current_hdemo_sk = hd2.hd_demo_sk
-    AND c_current_addr_sk = ad2.ca_address_sk
-    AND c_first_sales_date_sk = d2.d_date_sk
-    AND c_first_shipto_date_sk = d3.d_date_sk
-    AND ss_promo_sk = p_promo_sk
-    AND hd1.hd_income_band_sk = ib1.ib_income_band_sk
-    AND hd2.hd_income_band_sk = ib2.ib_income_band_sk
-    AND cd1.cd_marital_status <> cd2.cd_marital_status
+  JOIN cs_ui ON ss_item_sk = cs_ui.cs_item_sk
+  JOIN customer_demographics AS cd2 ON c_current_cdemo_sk = cd2.cd_demo_sk
+  JOIN household_demographics AS hd2 ON c_current_hdemo_sk = hd2.hd_demo_sk
+  JOIN customer_address AS ad2 ON c_current_addr_sk = ad2.ca_address_sk
+  JOIN date_dim AS d2 ON c_first_sales_date_sk = d2.d_date_sk
+  JOIN date_dim AS d3 ON c_first_shipto_date_sk = d3.d_date_sk
+  JOIN promotion ON ss_promo_sk = p_promo_sk
+  JOIN income_band AS ib1 ON hd1.hd_income_band_sk = ib1.ib_income_band_sk
+  JOIN income_band AS ib2 ON hd2.hd_income_band_sk = ib2.ib_income_band_sk
+  WHERE
+    cd1.cd_marital_status <> cd2.cd_marital_status
     AND i_color IN ('coral', 'thistle', 'lace', 'beige', 'spring', 'orchid')
     AND i_current_price BETWEEN 81 AND 81 + 10
     AND i_current_price BETWEEN 81 + 1 AND 81 + 15
@@ -94,14 +93,14 @@ SELECT
   cs2.s3 AS s32,
   cs2.syear,
   cs2.cnt
-FROM cross_sales AS cs1, cross_sales AS cs2
-WHERE
-  cs1.item_sk = cs2.item_sk
-  AND cs1.syear = 2001
-  AND cs2.syear = 2001 + 1
-  AND cs2.cnt <= cs1.cnt
+FROM cross_sales AS cs1
+JOIN cross_sales AS cs2 ON cs1.item_sk = cs2.item_sk
   AND cs1.store_name = cs2.store_name
   AND cs1.store_zip = cs2.store_zip
+WHERE
+  cs1.syear = 2001
+  AND cs2.syear = 2001 + 1
+  AND cs2.cnt <= cs1.cnt
 ORDER BY
   cs1.product_name,
   cs1.store_name,
