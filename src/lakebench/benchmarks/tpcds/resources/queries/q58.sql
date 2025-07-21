@@ -102,6 +102,6 @@ WHERE
   AND ws_item_rev BETWEEN 0.9 * ss_item_rev AND 1.1 * ss_item_rev
   AND ws_item_rev BETWEEN 0.9 * cs_item_rev AND 1.1 * cs_item_rev
 ORDER BY
-  item_id,
+  ss_items.item_id,
   ss_item_rev
 LIMIT 100
