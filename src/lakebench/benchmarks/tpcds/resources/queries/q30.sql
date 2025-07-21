@@ -27,8 +27,8 @@ SELECT
   c_last_review_date,
   ctr_total_return
 FROM customer_total_return AS ctr1
-JOIN customer_address ON ca_address_sk = c_current_addr_sk
 JOIN customer ON ctr1.ctr_customer_sk = c_customer_sk
+JOIN customer_address ON ca_address_sk = c_current_addr_sk
 WHERE
   ctr1.ctr_total_return > (
     SELECT
