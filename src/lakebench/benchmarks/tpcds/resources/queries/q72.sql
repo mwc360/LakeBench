@@ -61,5 +61,5 @@ ORDER BY
   total_cnt DESC,
   i_item_desc,
   w_warehouse_name,
-  d_week_seq
+  d1.d_week_seq
 LIMIT 100
