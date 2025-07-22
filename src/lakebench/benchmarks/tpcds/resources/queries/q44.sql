@@ -32,7 +32,8 @@ FROM (
   ) AS V11
   WHERE
     rnk < 11
-) AS asceding, (
+) AS asceding
+JOIN (
   SELECT
     *
   FROM (
@@ -62,11 +63,9 @@ FROM (
   ) AS V21
   WHERE
     rnk < 11
-) AS descending, item AS i1, item AS i2
-WHERE
-  asceding.rnk = descending.rnk
-  AND i1.i_item_sk = asceding.item_sk
-  AND i2.i_item_sk = descending.item_sk
+) AS descending ON asceding.rnk = descending.rnk
+JOIN item AS i1 ON i1.i_item_sk = asceding.item_sk
+JOIN item AS i2 ON i2.i_item_sk = descending.item_sk
 ORDER BY
   asceding.rnk
 LIMIT 100

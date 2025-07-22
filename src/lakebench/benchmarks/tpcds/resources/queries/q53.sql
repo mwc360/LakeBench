@@ -5,12 +5,12 @@ FROM (
     i_manufact_id,
     SUM(ss_sales_price) AS sum_sales,
     AVG(SUM(ss_sales_price)) OVER (PARTITION BY i_manufact_id) AS avg_quarterly_sales
-  FROM item, store_sales, date_dim, store
+  FROM item
+  JOIN store_sales ON ss_item_sk = i_item_sk
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
+  JOIN store ON ss_store_sk = s_store_sk
   WHERE
-    ss_item_sk = i_item_sk
-    AND ss_sold_date_sk = d_date_sk
-    AND ss_store_sk = s_store_sk
-    AND d_month_seq IN (1183, 1183 + 1, 1183 + 2, 1183 + 3, 1183 + 4, 1183 + 5, 1183 + 6, 1183 + 7, 1183 + 8, 1183 + 9, 1183 + 10, 1183 + 11)
+    d_month_seq IN (1183, 1183 + 1, 1183 + 2, 1183 + 3, 1183 + 4, 1183 + 5, 1183 + 6, 1183 + 7, 1183 + 8, 1183 + 9, 1183 + 10, 1183 + 11)
     AND (
       (
         i_category IN ('Books', 'Children', 'Electronics')

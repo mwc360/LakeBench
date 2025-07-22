@@ -3,17 +3,17 @@ SELECT
   AVG(ws_quantity),
   AVG(wr_refunded_cash),
   AVG(wr_fee)
-FROM web_sales, web_returns, web_page, customer_demographics AS cd1, customer_demographics AS cd2, customer_address, date_dim, reason
-WHERE
-  ws_web_page_sk = wp_web_page_sk
-  AND ws_item_sk = wr_item_sk
+FROM web_sales
+JOIN web_returns ON ws_item_sk = wr_item_sk
   AND ws_order_number = wr_order_number
-  AND ws_sold_date_sk = d_date_sk
-  AND d_year = 1999
-  AND cd1.cd_demo_sk = wr_refunded_cdemo_sk
-  AND cd2.cd_demo_sk = wr_returning_cdemo_sk
-  AND ca_address_sk = wr_refunded_addr_sk
-  AND r_reason_sk = wr_reason_sk
+JOIN web_page ON ws_web_page_sk = wp_web_page_sk
+JOIN customer_demographics AS cd1 ON cd1.cd_demo_sk = wr_refunded_cdemo_sk
+JOIN customer_demographics AS cd2 ON cd2.cd_demo_sk = wr_returning_cdemo_sk
+JOIN customer_address ON ca_address_sk = wr_refunded_addr_sk
+JOIN date_dim ON ws_sold_date_sk = d_date_sk
+JOIN reason ON r_reason_sk = wr_reason_sk
+WHERE
+  d_year = 1999
   AND (
     (
       cd1.cd_marital_status = 'U'

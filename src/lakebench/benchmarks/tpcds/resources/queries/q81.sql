@@ -3,11 +3,11 @@ WITH customer_total_return AS (
     cr_returning_customer_sk AS ctr_customer_sk,
     ca_state AS ctr_state,
     SUM(cr_return_amt_inc_tax) AS ctr_total_return
-  FROM catalog_returns, date_dim, customer_address
+  FROM catalog_returns
+  JOIN date_dim ON cr_returned_date_sk = d_date_sk
+  JOIN customer_address ON cr_returning_addr_sk = ca_address_sk
   WHERE
-    cr_returned_date_sk = d_date_sk
-    AND d_year = 1999
-    AND cr_returning_addr_sk = ca_address_sk
+    d_year = 1999
   GROUP BY
     cr_returning_customer_sk,
     ca_state
@@ -29,7 +29,9 @@ SELECT
   ca_gmt_offset,
   ca_location_type,
   ctr_total_return
-FROM customer_total_return AS ctr1, customer_address, customer
+FROM customer_total_return AS ctr1
+JOIN customer ON ctr1.ctr_customer_sk = c_customer_sk
+JOIN customer_address ON ca_address_sk = c_current_addr_sk
 WHERE
   ctr1.ctr_total_return > (
     SELECT
@@ -38,9 +40,7 @@ WHERE
     WHERE
       ctr1.ctr_state = ctr2.ctr_state
   )
-  AND ca_address_sk = c_current_addr_sk
   AND ca_state = 'KY'
-  AND ctr1.ctr_customer_sk = c_customer_sk
 ORDER BY
   c_customer_id,
   c_salutation,

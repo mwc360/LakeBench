@@ -4,13 +4,13 @@ SELECT
   AVG(cs_list_price) AS agg2,
   AVG(cs_coupon_amt) AS agg3,
   AVG(cs_sales_price) AS agg4
-FROM catalog_sales, customer_demographics, date_dim, item, promotion
+FROM catalog_sales
+JOIN date_dim ON cs_sold_date_sk = d_date_sk
+JOIN item ON cs_item_sk = i_item_sk
+JOIN customer_demographics ON cs_bill_cdemo_sk = cd_demo_sk
+JOIN promotion ON cs_promo_sk = p_promo_sk
 WHERE
-  cs_sold_date_sk = d_date_sk
-  AND cs_item_sk = i_item_sk
-  AND cs_bill_cdemo_sk = cd_demo_sk
-  AND cs_promo_sk = p_promo_sk
-  AND cd_gender = 'M'
+  cd_gender = 'M'
   AND cd_marital_status = 'D'
   AND cd_education_status = 'Secondary'
   AND (

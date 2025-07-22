@@ -44,13 +44,13 @@ SELECT
   SUM(CASE WHEN (
     ws_ship_date_sk - ws_sold_date_sk > 120
   ) THEN 1 ELSE 0 END) AS `>120 days`
-FROM web_sales, warehouse, ship_mode, web_site, date_dim
+FROM web_sales
+JOIN warehouse ON ws_warehouse_sk = w_warehouse_sk
+JOIN ship_mode ON ws_ship_mode_sk = sm_ship_mode_sk
+JOIN web_site ON ws_web_site_sk = web_site_sk
+JOIN date_dim ON ws_ship_date_sk = d_date_sk
 WHERE
   d_month_seq BETWEEN 1183 AND 1183 + 11
-  AND ws_ship_date_sk = d_date_sk
-  AND ws_warehouse_sk = w_warehouse_sk
-  AND ws_ship_mode_sk = sm_ship_mode_sk
-  AND ws_web_site_sk = web_site_sk
 GROUP BY
   SUBSTR(w_warehouse_name, 1, 20),
   sm_type,

@@ -77,13 +77,13 @@ FROM (
     SUM(CASE WHEN d_moy = 10 THEN ws_net_profit * ws_quantity ELSE 0 END) AS oct_net,
     SUM(CASE WHEN d_moy = 11 THEN ws_net_profit * ws_quantity ELSE 0 END) AS nov_net,
     SUM(CASE WHEN d_moy = 12 THEN ws_net_profit * ws_quantity ELSE 0 END) AS dec_net
-  FROM web_sales, warehouse, date_dim, time_dim, ship_mode
+  FROM web_sales
+  JOIN warehouse ON ws_warehouse_sk = w_warehouse_sk
+  JOIN date_dim ON ws_sold_date_sk = d_date_sk
+  JOIN time_dim ON ws_sold_time_sk = t_time_sk
+  JOIN ship_mode ON ws_ship_mode_sk = sm_ship_mode_sk
   WHERE
-    ws_warehouse_sk = w_warehouse_sk
-    AND ws_sold_date_sk = d_date_sk
-    AND ws_sold_time_sk = t_time_sk
-    AND ws_ship_mode_sk = sm_ship_mode_sk
-    AND d_year = 2001
+    d_year = 2001
     AND t_time BETWEEN 46037 AND 46037 + 28800
     AND sm_carrier IN ('UPS', 'ALLIANCE')
   GROUP BY
@@ -128,13 +128,13 @@ FROM (
     SUM(CASE WHEN d_moy = 10 THEN cs_net_paid_inc_ship * cs_quantity ELSE 0 END) AS oct_net,
     SUM(CASE WHEN d_moy = 11 THEN cs_net_paid_inc_ship * cs_quantity ELSE 0 END) AS nov_net,
     SUM(CASE WHEN d_moy = 12 THEN cs_net_paid_inc_ship * cs_quantity ELSE 0 END) AS dec_net
-  FROM catalog_sales, warehouse, date_dim, time_dim, ship_mode
+  FROM catalog_sales
+  JOIN warehouse ON cs_warehouse_sk = w_warehouse_sk
+  JOIN date_dim ON cs_sold_date_sk = d_date_sk
+  JOIN time_dim ON cs_sold_time_sk = t_time_sk
+  JOIN ship_mode ON cs_ship_mode_sk = sm_ship_mode_sk
   WHERE
-    cs_warehouse_sk = w_warehouse_sk
-    AND cs_sold_date_sk = d_date_sk
-    AND cs_sold_time_sk = t_time_sk
-    AND cs_ship_mode_sk = sm_ship_mode_sk
-    AND d_year = 2001
+    d_year = 2001
     AND t_time BETWEEN 46037 AND 46037 + 28800
     AND sm_carrier IN ('UPS', 'ALLIANCE')
   GROUP BY

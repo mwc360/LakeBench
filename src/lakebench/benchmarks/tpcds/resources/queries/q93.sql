@@ -19,9 +19,10 @@ FROM (
   LEFT OUTER JOIN store_returns
     ON (
       sr_item_sk = ss_item_sk AND sr_ticket_number = ss_ticket_number
-    ), reason
+    )
+  JOIN reason ON sr_reason_sk = r_reason_sk
   WHERE
-    sr_reason_sk = r_reason_sk AND r_reason_desc = 'reason 42'
+    r_reason_desc = 'reason 42'
 ) AS t
 GROUP BY
   ss_customer_sk

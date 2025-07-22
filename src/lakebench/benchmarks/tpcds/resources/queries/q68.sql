@@ -15,13 +15,13 @@ FROM (
     SUM(ss_ext_sales_price) AS extended_price,
     SUM(ss_ext_list_price) AS list_price,
     SUM(ss_ext_tax) AS extended_tax
-  FROM store_sales, date_dim, store, household_demographics, customer_address
+  FROM store_sales
+  JOIN date_dim ON store_sales.ss_sold_date_sk = date_dim.d_date_sk
+  JOIN store ON store_sales.ss_store_sk = store.s_store_sk
+  JOIN household_demographics ON store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
+  JOIN customer_address ON store_sales.ss_addr_sk = customer_address.ca_address_sk
   WHERE
-    store_sales.ss_sold_date_sk = date_dim.d_date_sk
-    AND store_sales.ss_store_sk = store.s_store_sk
-    AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
-    AND store_sales.ss_addr_sk = customer_address.ca_address_sk
-    AND date_dim.d_dom BETWEEN 1 AND 2
+    date_dim.d_dom BETWEEN 1 AND 2
     AND (
       household_demographics.hd_dep_count = 6
       OR household_demographics.hd_vehicle_count = 4
@@ -33,11 +33,11 @@ FROM (
     ss_customer_sk,
     ss_addr_sk,
     ca_city
-) AS dn, customer, customer_address AS current_addr
+) AS dn
+JOIN customer ON ss_customer_sk = c_customer_sk
+JOIN customer_address AS current_addr ON customer.c_current_addr_sk = current_addr.ca_address_sk
 WHERE
-  ss_customer_sk = c_customer_sk
-  AND customer.c_current_addr_sk = current_addr.ca_address_sk
-  AND current_addr.ca_city <> bought_city
+  current_addr.ca_city <> bought_city
 ORDER BY
   c_last_name,
   ss_ticket_number

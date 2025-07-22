@@ -12,12 +12,12 @@ FROM (
     store.s_city,
     SUM(ss_coupon_amt) AS amt,
     SUM(ss_net_profit) AS profit
-  FROM store_sales, date_dim, store, household_demographics
+  FROM store_sales
+  JOIN date_dim ON store_sales.ss_sold_date_sk = date_dim.d_date_sk
+  JOIN store ON store_sales.ss_store_sk = store.s_store_sk
+  JOIN household_demographics ON store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
   WHERE
-    store_sales.ss_sold_date_sk = date_dim.d_date_sk
-    AND store_sales.ss_store_sk = store.s_store_sk
-    AND store_sales.ss_hdemo_sk = household_demographics.hd_demo_sk
-    AND (
+    (
       household_demographics.hd_dep_count = 2
       OR household_demographics.hd_vehicle_count > 1
     )
@@ -29,9 +29,8 @@ FROM (
     ss_customer_sk,
     ss_addr_sk,
     store.s_city
-) AS ms, customer
-WHERE
-  ss_customer_sk = c_customer_sk
+) AS ms
+JOIN customer ON ss_customer_sk = c_customer_sk
 ORDER BY
   c_last_name,
   c_first_name,

@@ -14,27 +14,27 @@ WITH my_customers AS (
       ws_bill_customer_sk AS customer_sk,
       ws_item_sk AS item_sk
     FROM web_sales
-  ) AS cs_or_ws_sales, item, date_dim, customer
+  ) AS cs_or_ws_sales
+  JOIN item ON item_sk = i_item_sk
+  JOIN date_dim ON sold_date_sk = d_date_sk
+  JOIN customer ON c_customer_sk = cs_or_ws_sales.customer_sk
   WHERE
-    sold_date_sk = d_date_sk
-    AND item_sk = i_item_sk
-    AND i_category = 'Home'
+    i_category = 'Home'
     AND i_class = 'paint'
-    AND c_customer_sk = cs_or_ws_sales.customer_sk
     AND d_moy = 3
     AND d_year = 2002
 ), my_revenue AS (
   SELECT
     c_customer_sk,
     SUM(ss_ext_sales_price) AS revenue
-  FROM my_customers, store_sales, customer_address, store, date_dim
-  WHERE
-    c_current_addr_sk = ca_address_sk
-    AND ca_county = s_county
+  FROM my_customers
+  JOIN store_sales ON c_customer_sk = ss_customer_sk
+  JOIN customer_address ON c_current_addr_sk = ca_address_sk
+  JOIN store ON ca_county = s_county
     AND ca_state = s_state
-    AND ss_sold_date_sk = d_date_sk
-    AND c_customer_sk = ss_customer_sk
-    AND d_month_seq BETWEEN (
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
+  WHERE
+    d_month_seq BETWEEN (
       SELECT DISTINCT
         d_month_seq + 1
       FROM date_dim

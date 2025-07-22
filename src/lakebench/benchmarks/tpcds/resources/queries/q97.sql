@@ -2,9 +2,10 @@ WITH ssci AS (
   SELECT
     ss_customer_sk AS customer_sk,
     ss_item_sk AS item_sk
-  FROM store_sales, date_dim
+  FROM store_sales
+  JOIN date_dim ON ss_sold_date_sk = d_date_sk
   WHERE
-    ss_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1183 AND 1183 + 11
+    d_month_seq BETWEEN 1183 AND 1183 + 11
   GROUP BY
     ss_customer_sk,
     ss_item_sk
@@ -12,9 +13,10 @@ WITH ssci AS (
   SELECT
     cs_bill_customer_sk AS customer_sk,
     cs_item_sk AS item_sk
-  FROM catalog_sales, date_dim
+  FROM catalog_sales
+  JOIN date_dim ON cs_sold_date_sk = d_date_sk
   WHERE
-    cs_sold_date_sk = d_date_sk AND d_month_seq BETWEEN 1183 AND 1183 + 11
+    d_month_seq BETWEEN 1183 AND 1183 + 11
   GROUP BY
     cs_bill_customer_sk,
     cs_item_sk

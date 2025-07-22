@@ -15,12 +15,12 @@ WITH inv AS (
       d_moy,
       STDDEV(inv_quantity_on_hand) AS stdev,
       AVG(inv_quantity_on_hand) AS mean
-    FROM inventory, item, warehouse, date_dim
+    FROM inventory
+    JOIN item ON inv_item_sk = i_item_sk
+    JOIN warehouse ON inv_warehouse_sk = w_warehouse_sk
+    JOIN date_dim ON inv_date_sk = d_date_sk
     WHERE
-      inv_item_sk = i_item_sk
-      AND inv_warehouse_sk = w_warehouse_sk
-      AND inv_date_sk = d_date_sk
-      AND d_year = 1999
+      d_year = 1999
     GROUP BY
       w_warehouse_name,
       w_warehouse_sk,
@@ -41,11 +41,11 @@ SELECT
   inv2.d_moy,
   inv2.mean,
   inv2.cov
-FROM inv AS inv1, inv AS inv2
-WHERE
-  inv1.i_item_sk = inv2.i_item_sk
+FROM inv AS inv1
+JOIN inv AS inv2 ON inv1.i_item_sk = inv2.i_item_sk
   AND inv1.w_warehouse_sk = inv2.w_warehouse_sk
-  AND inv1.d_moy = 4
+WHERE
+  inv1.d_moy = 4
   AND inv2.d_moy = 4 + 1
 ORDER BY
   inv1.w_warehouse_sk,
