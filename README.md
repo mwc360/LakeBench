@@ -64,13 +64,13 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 | Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench |
 |-----------------|:--------:|:------:|:-------:|:----------:|
 | Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |
-| DuckDB          |    ✅    |   ⚠️   |   ✅  |    🔜    |
+| DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
 | Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 | Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 
 > **Legend:**  
 > ✅ = Supported  
-> ⚠️ = Some queries fail due to syntax issues (i.e. Polars doesn't support SQL non-equi joins), fixes coming soon!
+> ⚠️ = Some queries fail due to syntax issues (i.e. Polars doesn't support SQL non-equi joins, Daft is missing a lot of standard SQL contructs, i.e. DATE_ADD, CROSS JOIN, Subqueries, non-equi joins, CASE with operand, etc.).
 > 🔜 = Coming Soon  
 > (Blank) = Not currently supported 
 

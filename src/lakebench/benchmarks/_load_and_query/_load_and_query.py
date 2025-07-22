@@ -1,6 +1,6 @@
 from typing import List, Optional
 from ..base import BaseBenchmark
-from ...utils.query_utils import transpile_and_qualify_query
+from ...utils.query_utils import transpile_and_qualify_query, get_table_name_from_ddl
 
 from ...engines.base import BaseEngine
 from ...engines.spark import Spark
@@ -157,17 +157,6 @@ class _LoadAndQuery(BaseBenchmark):
             
         statements = [s for s in ddl.split(';') if len(s) > 7]
         for statement in statements:
-            if 'using ' not in statement.lower():
-                # Find the closing parenthesis of the column definitions
-                closing_paren_index = statement.rfind(")")
-                if closing_paren_index != -1:
-                    # Insert 'USING delta' after the closing parenthesis
-                    statement = (
-                        statement[:closing_paren_index + 1]
-                        + " using delta"
-                        + statement[closing_paren_index + 1:]
-                    )
-
             prepped_ddl = transpile_and_qualify_query(
                 query=statement, 
                 from_dialect='spark', 
@@ -175,9 +164,10 @@ class _LoadAndQuery(BaseBenchmark):
                 catalog=self.engine.catalog_name,
                 schema=self.engine.schema_name
             )
-            
-            self.engine.execute_sql_statement(prepped_ddl)
+            table_name = get_table_name_from_ddl(prepped_ddl)
 
+            self.engine._create_empty_table(table_name=table_name, ddl=prepped_ddl)
+            
     def _run_load_test(self):
         """
         Executes the load test by loading data from Parquet files into Delta tables 

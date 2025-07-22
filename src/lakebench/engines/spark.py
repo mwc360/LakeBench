@@ -89,6 +89,21 @@ class Spark(BaseEngine):
         self.spark.sql(f"CREATE SCHEMA IF NOT EXISTS {self.full_catalog_schema_reference} {location_str}")
         self.spark.sql(f"USE {self.full_catalog_schema_reference}")
 
+    def _create_empty_table(self, table_name: Optional[str], ddl: str):
+        # Explicitly set the table type to Delta if not already specified
+        if 'using ' not in ddl.lower():
+            # Find the closing parenthesis of the column definitions
+            closing_paren_index = ddl.rfind(")")
+            if closing_paren_index != -1:
+                # Insert 'USING delta' after the closing parenthesis
+                ddl = (
+                    ddl[:closing_paren_index + 1]
+                    + " using delta"
+                    + ddl[closing_paren_index + 1:]
+                )
+
+        self.execute_sql_statement(ddl)
+
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """
         Convert a generic schema to a specific Spark schema.

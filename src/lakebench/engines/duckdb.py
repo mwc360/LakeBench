@@ -12,7 +12,7 @@ class DuckDB(BaseEngine):
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
     SUPPORTS_ONELAKE = True
-    SUPPORTS_SCHEMA_PREP = False
+    SUPPORTS_SCHEMA_PREP = True
 
     def __init__(
             self, 
@@ -25,7 +25,7 @@ class DuckDB(BaseEngine):
         super().__init__()
         import duckdb
         self.duckdb = duckdb.connect()
-        self.duckdb.sql(f""" CREATE or replace SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{self.notebookutils.credentials.getToken('storage')}') ;""")
+        self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{self.notebookutils.credentials.getToken('storage')}') ;""")
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
@@ -33,6 +33,33 @@ class DuckDB(BaseEngine):
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+
+    def create_schema_if_not_exists(self, drop_before_create: bool = True):
+        if drop_before_create:
+            try:
+                self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                raise e
+        # no need to create schema for Python engines
+    
+    def _create_empty_table(self, table_name: str, ddl: str):
+        if not ddl.strip().startswith("CREATE OR REPLACE TABLE"):
+            ddl = ddl.replace("CREATE TABLE", "CREATE OR REPLACE TABLE")
+        # Create in memory table
+        self.duckdb.sql(ddl)
+
+        arrow_df = self.duckdb.sql(f"FROM {table_name}")
+
+        # Write empty in-memory table as Delta
+        self.deltars.write_deltalake(
+            posixpath.join(self.delta_abfss_schema_path, table_name),
+            arrow_df,
+            mode="overwrite"
+        )  
+        # Drop the in-memory table
+        self.duckdb.sql(f"DROP TABLE IF EXISTS {table_name}")
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()

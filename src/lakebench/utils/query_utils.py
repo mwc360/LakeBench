@@ -11,3 +11,14 @@ def transpile_and_qualify_query(query:str, from_dialect:str, to_dialect:str, cat
     .sql(to_dialect, normalize=False)
 
     return qualified_sql
+
+def get_table_name_from_ddl(ddl: str) -> str:
+    import sqlglot
+    from sqlglot.expressions import Table, Identifier
+
+    expression = sqlglot.parse_one(ddl)
+    table = expression.find(Table)
+    if not table or not isinstance(table.this, Identifier):
+        raise ValueError("Table name not found in DDL statement.")
+
+    return table.this.this
