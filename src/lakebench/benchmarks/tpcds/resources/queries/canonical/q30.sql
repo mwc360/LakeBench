@@ -24,7 +24,7 @@ SELECT
   c_birth_country,
   c_login,
   c_email_address,
-  c_last_review_date,
+  c_last_review_date_sk,
   ctr_total_return
 FROM customer_total_return AS ctr1
 JOIN customer ON ctr1.ctr_customer_sk = c_customer_sk
@@ -50,6 +50,6 @@ ORDER BY
   c_birth_country,
   c_login,
   c_email_address,
-  c_last_review_date,
+  c_last_review_date_sk,
   ctr_total_return
 LIMIT 100

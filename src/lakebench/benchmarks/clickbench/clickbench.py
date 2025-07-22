@@ -8,6 +8,7 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 
 from .engine_impl.spark import SparkClickBench
+from .engine_impl.duckdb import DuckDBClickBench
 
 class ClickBench(_LoadAndQuery):
     """
@@ -55,9 +56,7 @@ class ClickBench(_LoadAndQuery):
     """
     BENCHMARK_IMPL_REGISTRY = {
         Spark: SparkClickBench,
-        DuckDB: None,
-        Daft: None,
-        Polars: None
+        DuckDB: DuckDBClickBench
     }
     BENCHMARK_NAME = 'ClickBench'
     TABLE_REGISTRY = [
