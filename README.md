@@ -158,6 +158,23 @@ _Notes:_
 - TPC-H and TPC-DS datasets up to SF10 will complete in minutes on a 2-vCore machine.
 - The ClickBench dataset (only 1 size) should download with partitioned files in ~ 1 minute and ~ 6 minutes as a single file. 
 
+#### Is BYO Data Supported?
+If you want to use you own TPC-DS, TPC-H, or ClickBench parquet datasets, that is fine and encouraged as long as they are to specification. The Databricks [spark-sql-perf](https://github.com/databricks/spark-sql-perf) repo which is commonly used to produce TPC-DS and TPC-H datasets for benchmarking Spark has two critical schema bugs (typos?) in their implementation. Rather than supporting the perpetuation of these typos, LakeBench sticks to the schema defined in the specs. These datasets need to be fixed before running LakeBench with any data generated from spark-sql-perf:
+1. The `c_last_review_date_sk` column in the TPC-DS `customer` table was named `c_last_review_date` (the **_sk** is missing) and it is generated as a string whereas the TPC-DS spec says this column is a Identity type which would map to a integer. The data value is still a surrogate key but the schema doesn't exactly match the specification.
+    _Fix via:_
+    ```python
+    df = spark.read.parquet(f".../customer/")
+    df = df.withColumn('c_last_review_date_sk', sf.col('c_last_review_date').cast('int')).drop('c_last_review_date')
+    df.write.mode('overwrite').parquet(f".../customer/")
+    ```
+1. The `s_tax_percentage` column in the TPC-DS `store` table was named with a typo: `s_tax_precentage` (is "**pre**centage" the precursor of a "**per**centage"??).
+    _Fix via:_
+    ```python
+    df = spark.read.parquet(f"..../store/")
+    df = df.withColumnRenamed('s_tax_precentage', 's_tax_percentage')
+    df.write.mode('overwrite').parquet(f"..../store/")
+    ```
+
 ### Fabric Spark
 ```python
 from lakebench.engines import FabricSpark
