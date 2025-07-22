@@ -12,7 +12,7 @@ LakeBench exists to bring clarity, trust, accessibility, and relevance to engine
 
 1. **Variety in Benchmarks Is Essential**
 
-    Real-world pipelines deal with different data shapes, sizes, and patterns. One-size-fits-all benchmarks miss this nuance.
+    Real-world pipelines deal with with different data shapes, sizes, and patterns. One-size-fits-all benchmarks miss this nuance.
 
     > LakeBench covers a **variety of benchmarks** that represent **diverse workloads** — from bulk loads to incremental merges to maintenance jobs to ad-hoc queries — providing a richer picture of engine behavior under different conditions.
 
@@ -159,7 +159,7 @@ _Notes:_
 - The ClickBench dataset (only 1 size) should download with partitioned files in ~ 1 minute and ~ 6 minutes as a single file. 
 
 #### Is BYO Data Supported?
-If you want to use you own TPC-DS, TPC-H, or ClickBench parquet datasets, that is fine and encouraged as long as they are to specification. The Databricks [spark-sql-perf](https://github.com/databricks/spark-sql-perf) repo which is commonly used to produce TPC-DS and TPC-H datasets for benchmarking Spark has two critical schema bugs (typos?) in their implementation. Rather than supporting the perpetuation of these typos, LakeBench sticks to the schema defined in the specs. These datasets need to be fixed before running LakeBench with any data generated from spark-sql-perf:
+If you want to use you own TPC-DS, TPC-H, or ClickBench parquet datasets, that is fine and encouraged as long as they are to specification. The Databricks [spark-sql-perf](https://github.com/databricks/spark-sql-perf) repo which is commonly used to produce TPC-DS and TPC-H datasets for benchmarking Spark has two critical schema bugs (typos?) in their implementation. Rather than supporting the perpetuation of these typos, LakeBench sticks to the schema defined in the specs. An [issue](https://github.com/databricks/spark-sql-perf/issues/219) was raised for tracking if this gets fixed. These datasets need to be fixed before running LakeBench with any data generated from spark-sql-perf:
 1. The `c_last_review_date_sk` column in the TPC-DS `customer` table was named `c_last_review_date` (the **_sk** is missing) and it is generated as a string whereas the TPC-DS spec says this column is a Identity type which would map to a integer. The data value is still a surrogate key but the schema doesn't exactly match the specification.
     _Fix via:_
     ```python
@@ -222,6 +222,48 @@ benchmark = ELTBench(
 benchmark.run()
 ```
 ---
+
+## Managing Queries Over Various Dialects
+
+LakeBench supports multiple engines that each leverage different SQL dialects and capabilities. To handle this diversity while maintaining consistency, LakeBench employs a **hierarchical query resolution strategy** that balances automated transpilation with engine-specific customization.
+
+### Query Resolution Strategy
+
+LakeBench uses a three-tier fallback approach for each query:
+
+1. **Engine-Specific Override** (if exists - rare)
+   - Custom queries tailored for specific engine limitations or optimizations
+   - Example: `src/lakebench/benchmarks/tpch/resources/queries/daft/q14.sql` -> Daft is generally sensitive to multiplying decimals and thus requires casing to `DOUBLE` or managing specific decimal types.
+
+2. **Parent Engine Class Override** (if exists - rare)
+   - Shared customizations for engine families, i.e. Spark (_not yet leveraged by any engine and benchmark combinations_).
+   - Example: `src/lakebench/benchmarks/tpch/resources/queries/spark/q14.sql`
+
+3. **Canonical + Transpilation** (fallback - common)
+   - SparkSQL canonical queries are automatically transpiled via SQLGlot. Each engine registers its `SQLGLOT_DIALECT` constant, enabling automatic transpilation when custom queries aren't needed.
+   - Example: `src/lakebench/benchmarks/tpch/resources/queries/canonical/q14.sql`
+
+In all cases, tables are automatically qualified with the catalog and schema if applicable to the engine class.
+
+### Why This Approach?
+
+**Real-World Engine Limitations**: Engines like Daft lack support for `DATE_ADD`, `CROSS JOIN`, subqueries, and non-equi joins. Polars doesn't support non-equi joins. Rather than restricting all queries to the lowest common denominator, LakeBench allows targeted workarounds.
+
+**Automated Transpilation Where Possible**: For most queries, SQLGlot can successfully transpile SparkSQL to engine-specific dialects (DuckDB, Postgres, SQLServer, etc.), eliminating manual maintenance overhead and a proliferation of query variants.
+
+**Expert Optimization**: Engine specific subject matter experts can contribute PRs with optimized query variants that reasonably follow the specification of the benchmark author (i.e. TPC).
+
+### Viewing Generated Queries
+
+To inspect the final query that will be executed for any engine:
+
+```python
+benchmark = TPCH(engine=MyEngine(...))
+query_str = benchmark._return_query_definition('q14')
+print(query_str)  # Shows final transpiled/customized query
+```
+
+This approach ensures **consistency** (same business logic across engines), **accessibility** (as much as possible, engines work out-of-the-box), and **flexibility** (custom optimizations where needed).
 
 # 📬 Feedback / Contributions
 Got ideas? Found a bug? Want to contribute a benchmark or engine wrapper? PRs and issues are welcome!

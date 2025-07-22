@@ -151,18 +151,47 @@ class _LoadAndQuery(BaseBenchmark):
         - The DDL file is expected to be located in the `resources.ddl` directory corresponding to the TPC benchmark variant.
         """
         self.engine.create_schema_if_not_exists(drop_before_create=True)
-        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl", self.DDL_FILE_NAME) as ddl_path:
-            with open(ddl_path, 'r') as ddl_file:
-                ddl = ddl_file.read()
+
+        engine_class_name = self.engine.__class__.__name__.lower()
+        parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
+        from_dialect = self.engine.SQLGLOT_DIALECT
+
+        try:
+            # Try to load engine-specific query first
+            with importlib.resources.path(
+                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{engine_class_name}", 
+                self.DDL_FILE_NAME
+            ) as ddl_path:
+                with open(ddl_path, 'r') as ddl_file:
+                    ddl = ddl_file.read()                
+        except (ModuleNotFoundError, FileNotFoundError):
+            # Try parent engine class name if engine-specific fails
+            try:
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{parent_class_name}", 
+                    self.DDL_FILE_NAME
+                ) as ddl_path:
+                    with open(ddl_path, 'r') as ddl_file:
+                        ddl = ddl_file.read()
+            except (ModuleNotFoundError, FileNotFoundError):
+                # Fall back to canonical query
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.canonical", 
+                    self.DDL_FILE_NAME
+                ) as ddl_path:
+                    with open(ddl_path, 'r') as ddl_file:
+                        ddl = ddl_file.read()
+                from_dialect = 'spark'
             
         statements = [s for s in ddl.split(';') if len(s) > 7]
         for statement in statements:
             prepped_ddl = transpile_and_qualify_query(
                 query=statement, 
-                from_dialect='spark', 
+                from_dialect=from_dialect, 
                 to_dialect=self.engine.SQLGLOT_DIALECT, 
-                catalog=self.engine.catalog_name,
-                schema=self.engine.schema_name
+                catalog=getattr(self.engine, 'catalog_name', None),
+                schema=getattr(self.engine, 'schema_name', None)
             )
             table_name = get_table_name_from_ddl(prepped_ddl)
 
@@ -259,13 +288,45 @@ class _LoadAndQuery(BaseBenchmark):
         str
             The SQL definition for the specified query.
         """
-        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries", f'{query_name}.sql') as query_path:
+        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", f'{query_name}.sql') as query_path:
             with open(query_path, 'r') as query_file:
                 query = query_file.read()
 
+        engine_class_name = self.engine.__class__.__name__.lower()
+        parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
+        from_dialect = self.engine.SQLGLOT_DIALECT
+
+        try:
+            # Try to load engine-specific query first
+            with importlib.resources.path(
+                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{engine_class_name}", 
+                f'{query_name}.sql'
+            ) as query_path:
+                with open(query_path, 'r') as query_file:
+                    query = query_file.read()                
+        except (ModuleNotFoundError, FileNotFoundError):
+            # Try parent engine class name if engine-specific fails
+            try:
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{parent_class_name}", 
+                    f'{query_name}.sql'
+                ) as query_path:
+                    with open(query_path, 'r') as query_file:
+                        query = query_file.read()
+            except (ModuleNotFoundError, FileNotFoundError):
+                # Fall back to canonical query
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", 
+                    f'{query_name}.sql'
+                ) as query_path:
+                    with open(query_path, 'r') as query_file:
+                        query = query_file.read()
+                from_dialect = 'spark'
+
         prepped_query = transpile_and_qualify_query(
             query=query, 
-            from_dialect='spark', 
+            from_dialect=from_dialect, 
             to_dialect=self.engine.SQLGLOT_DIALECT, 
             catalog=self.engine.catalog_name,
             schema=self.engine.schema_name
