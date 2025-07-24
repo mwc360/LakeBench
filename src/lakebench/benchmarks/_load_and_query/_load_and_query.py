@@ -326,7 +326,7 @@ class _LoadAndQuery(BaseBenchmark):
             query=query, 
             from_dialect=from_dialect, 
             to_dialect=self.engine.SQLGLOT_DIALECT, 
-            catalog=self.engine.catalog_name,
-            schema=self.engine.schema_name
-            )
+            catalog=getattr(self.engine, 'catalog_name', None),
+            schema=getattr(self.engine, 'schema_name', None)
+        )
         return prepped_query
