@@ -154,13 +154,14 @@ class _LoadAndQuery(BaseBenchmark):
 
         engine_class_name = self.engine.__class__.__name__.lower()
         parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        benchmark_name = self.__class__.__name__.lower()
         engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
         from_dialect = self.engine.SQLGLOT_DIALECT
 
         try:
             # Try to load engine-specific query first
             with importlib.resources.path(
-                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{engine_class_name}", 
+                f"{engine_root_lib_name}.benchmarks.{benchmark_name}.resources.ddl.{engine_class_name}", 
                 self.DDL_FILE_NAME
             ) as ddl_path:
                 with open(ddl_path, 'r') as ddl_file:
@@ -169,7 +170,7 @@ class _LoadAndQuery(BaseBenchmark):
             # Try parent engine class name if engine-specific fails
             try:
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{parent_class_name}", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.{parent_class_name}", 
                     self.DDL_FILE_NAME
                 ) as ddl_path:
                     with open(ddl_path, 'r') as ddl_file:
@@ -177,7 +178,7 @@ class _LoadAndQuery(BaseBenchmark):
             except (ModuleNotFoundError, FileNotFoundError):
                 # Fall back to canonical query
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.canonical", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.canonical", 
                     self.DDL_FILE_NAME
                 ) as ddl_path:
                     with open(ddl_path, 'r') as ddl_file:
@@ -288,19 +289,16 @@ class _LoadAndQuery(BaseBenchmark):
         str
             The SQL definition for the specified query.
         """
-        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", f'{query_name}.sql') as query_path:
-            with open(query_path, 'r') as query_file:
-                query = query_file.read()
-
         engine_class_name = self.engine.__class__.__name__.lower()
         parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        benchmark_name = self.__class__.__name__.lower()
         engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
         from_dialect = self.engine.SQLGLOT_DIALECT
 
         try:
             # Try to load engine-specific query first
             with importlib.resources.path(
-                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{engine_class_name}", 
+                f"{engine_root_lib_name}.benchmarks.{benchmark_name}.resources.queries.{engine_class_name}", 
                 f'{query_name}.sql'
             ) as query_path:
                 with open(query_path, 'r') as query_file:
@@ -309,7 +307,7 @@ class _LoadAndQuery(BaseBenchmark):
             # Try parent engine class name if engine-specific fails
             try:
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{parent_class_name}", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.queries.{parent_class_name}", 
                     f'{query_name}.sql'
                 ) as query_path:
                     with open(query_path, 'r') as query_file:
@@ -317,7 +315,7 @@ class _LoadAndQuery(BaseBenchmark):
             except (ModuleNotFoundError, FileNotFoundError):
                 # Fall back to canonical query
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.queries.canonical", 
                     f'{query_name}.sql'
                 ) as query_path:
                     with open(query_path, 'r') as query_file:
