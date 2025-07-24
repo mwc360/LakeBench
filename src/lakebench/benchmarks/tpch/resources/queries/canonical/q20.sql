@@ -28,7 +28,7 @@ WHERE
                     l_partkey = ps_partkey
                     AND l_suppkey = ps_suppkey
                     AND l_shipdate >= CAST('1997-01-01' AS DATE)
-                    AND l_shipdate < CAST('1997-01-01' AS DATE) + INTERVAL '12' MONTH
+                    AND l_shipdate < CAST('1998-01-01' AS DATE)
             )
     )
     AND n_name = 'ALGERIA'
