@@ -1,5 +1,6 @@
 from ....engines.duckdb import DuckDB
 import posixpath
+from typing import Optional
 
 class DuckDBClickBench:
     def __init__(self, engine: DuckDB):
@@ -26,5 +27,5 @@ class DuckDBClickBench:
             mode="append"
         ) 
 
-    def execute_sql_query(self, query: str):
+    def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         return self.engine.execute_sql_query(query)
