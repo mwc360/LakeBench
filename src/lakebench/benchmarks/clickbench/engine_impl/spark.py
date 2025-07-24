@@ -1,4 +1,5 @@
 from ....engines.spark import Spark
+from typing import Optional
 
 class SparkClickBench:
     def __init__(self, engine: Spark):
@@ -29,5 +30,5 @@ class SparkClickBench:
 
         df.write.format("delta").mode("append").saveAsTable(table_name)
 
-    def execute_sql_query(self, query: str):
+    def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         return self.engine.execute_sql_query(query)
