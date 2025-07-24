@@ -150,11 +150,12 @@ class ELTBench(BaseBenchmark):
         self.mode = 'light'
         
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
-            with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine):
-                self.engine.load_parquet_to_delta(
+            with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine) as tc:
+                tc.execution_telemetry = self.engine.load_parquet_to_delta(
                     parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
                     table_name=table_name,
-                    table_is_precreated=False
+                    table_is_precreated=False,
+                    context_decorator=tc.context_decorator
                 )
         with self.timer(phase="Create fact table", test_item='total_sales_fact', engine=self.engine):
             self.benchmark_impl.create_total_sales_fact()

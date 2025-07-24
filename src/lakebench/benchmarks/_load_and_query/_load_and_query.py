@@ -229,14 +229,16 @@ class _LoadAndQuery(BaseBenchmark):
                     tc.execution_telemetry = self.benchmark_impl.load_parquet_to_delta(
                         table_name=table_name, 
                         source_data_path=self.source_data_path,
-                        table_is_precreated=True
+                        table_is_precreated=True,
+                        context_decorator=tc.context_decorator
                     )
                 else:
                     # Otherwise, use the generic load method
                     tc.execution_telemetry = self.engine.load_parquet_to_delta(
                         parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
                         table_name=table_name,
-                        table_is_precreated=True
+                        table_is_precreated=True,
+                        context_decorator=tc.context_decorator
                     )
         self.post_results()
 
@@ -256,10 +258,16 @@ class _LoadAndQuery(BaseBenchmark):
             with self.timer(phase="Query", test_item=query_name, engine=self.engine) as tc:
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to perform the query
-                    tc.execution_telemetry = self.benchmark_impl.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.benchmark_impl.execute_sql_query(
+                        prepped_query,
+                        context_decorator=tc.context_decorator
+                    )
                 else:
                     # Otherwise, use the generic query method
-                    tc.execution_telemetry = self.engine.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.engine.execute_sql_query(
+                        prepped_query,
+                        context_decorator=tc.context_decorator
+                    )
         self.post_results()
 
     def _run_power_test(self):

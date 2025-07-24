@@ -180,7 +180,7 @@ class Spark(BaseEngine):
 
         return cluster_config
     
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         df = self.spark.read.parquet(parquet_folder_path)
         if table_is_precreated:
             df.write.insertInto(table_name, overwrite=True)
@@ -190,12 +190,20 @@ class Spark(BaseEngine):
         if self.run_analyze_after_load:
             self.spark.sql(f"ANALYZE TABLE {table_name} COMPUTE STATISTICS FOR ALL COLUMNS;")    
 
-    def execute_sql_query(self, query: str):
+    def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         execute_sql = self.spark.sql(query).collect()
     
-    def execute_sql_statement(self, statement: str):
+    def execute_sql_statement(self, statement: str, context_decorator: Optional[str] = None):
         """
         Execute a SQL statement.
+
+        Parameters
+        ----------
+        statement : str
+            The SQL statement to execute.
+        context_decorator : Optional[str]
+            Not used by Spark, a job description is set instead.
+
         """
         self.spark.sql(statement)
 

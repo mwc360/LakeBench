@@ -61,7 +61,7 @@ class DuckDB(BaseEngine):
         # Drop the in-memory table
         self.duckdb.sql(f"DROP TABLE IF EXISTS {table_name}")
 
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()
         self.deltars.write_deltalake(
             posixpath.join(self.delta_abfss_schema_path, table_name),
@@ -78,7 +78,7 @@ class DuckDB(BaseEngine):
             AS SELECT * FROM delta_scan('{posixpath.join(self.delta_abfss_schema_path, table_name)}')
         """)
 
-    def execute_sql_query(self, query: str):
+    def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         """
         Execute a SQL query using DuckDB.
         """

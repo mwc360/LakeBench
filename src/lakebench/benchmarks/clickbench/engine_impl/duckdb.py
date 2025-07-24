@@ -6,7 +6,7 @@ class DuckDBClickBench:
         
         self.engine = engine
 
-    def load_parquet_to_delta(self, table_name: str, source_data_path: str, table_is_precreated: bool = False):
+    def load_parquet_to_delta(self, table_name: str, source_data_path: str, table_is_precreated: bool = False, context_decorator: str = None):
         """
         Loads the ClickBench parquet data into Delta format using Spark.
 

@@ -55,7 +55,7 @@ class Daft(BaseEngine):
                 raise e
         # no need to create schema for Python engines
         
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False):
+    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         table_df = self.daft.read_parquet(
             posixpath.join(parquet_folder_path)
         )
@@ -72,7 +72,7 @@ class Daft(BaseEngine):
             posixpath.join(self.delta_abfss_schema_path, table_name)
         )
 
-    def execute_sql_query(self, query: str):
+    def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         """
         Execute a SQL query using Daft.
         """
