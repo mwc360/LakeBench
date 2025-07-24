@@ -41,7 +41,8 @@ class FabricSpark(Spark):
 
         self.extended_engine_metadata.update({
             'spark_history_url': f"https://{self.spark_configs['spark.trident.pbienv'].lower()}.powerbi.com/workloads/de-ds/sparkmonitor/{self.spark_configs['spark.hadoop.trident.artifact.id']}/{self.spark_configs['spark.hadoop.trident.activity.id']}?ctid={self.spark_configs['spark.hadoop.trident.tenant.id']}",
-            'cost_per_hour': Decimal(self.cost_per_hour).quantize(Decimal('0.0000'))
+            'cost_per_hour': Decimal(self.cost_per_hour).quantize(Decimal('0.0000')),
+            'capacity_id': self.capacity_id
         })
 
         spark_configs_to_log = {k: v for k, v in self.spark_configs.items() if k in [

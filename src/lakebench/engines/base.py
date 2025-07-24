@@ -47,9 +47,10 @@ class BaseEngine(ABC):
 
         if self.is_fabric:
             import sempy.fabric as fabric
-            fabric_rest = fabric.FabricRestClient()
+            self._fabric_rest = fabric.FabricRestClient()
             workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
-            self.region = fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
+            self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
+            self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
 

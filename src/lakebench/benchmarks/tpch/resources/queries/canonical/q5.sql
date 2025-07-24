@@ -11,7 +11,7 @@ FROM
 WHERE
     r_name = 'ASIA'
     AND o_orderdate >= CAST('1994-01-01' AS DATE)
-    AND o_orderdate < CAST('1994-01-01' AS DATE) + INTERVAL '12' MONTH
+    AND o_orderdate < CAST('1995-01-01' AS DATE)
 GROUP BY
     n_name
 ORDER BY

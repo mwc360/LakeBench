@@ -9,9 +9,16 @@ def timer(phase: str = "Elapsed time", test_item: str = '', engine: str = None):
         timer.results = []
 
     iteration = sum(1 for result in timer.results if result[0] == phase and result[1] == test_item) + 1
+    
+    class TimerContext:
+        def __init__(self, phase: str, test_item: str, iteration: int):
+            self.execution_telemetry = {}
+            self.context_decorator = f"{phase} - {test_item} [i:{iteration}]"
+
+    timer_context = TimerContext(phase, test_item, iteration)
 
     if isinstance(engine, Spark):
-        engine.spark.sparkContext.setJobDescription(f"{phase} - {test_item} [i:{iteration}]")
+        engine.spark.sparkContext.setJobDescription(timer_context.context_decorator)
         if engine.spark_measure_telemetry:
             engine.capture_metrics.begin()
             engine.spark.sparkContext.setLocalProperty("spark.scheduler.pool", "lakebench")
@@ -22,11 +29,6 @@ def timer(phase: str = "Elapsed time", test_item: str = '', engine: str = None):
     error_message = None
     error_type = None
 
-    class TimerContext:
-        def __init__(self):
-            self.execution_telemetry = {}
-    
-    timer_context = TimerContext()
 
     try:
         yield timer_context

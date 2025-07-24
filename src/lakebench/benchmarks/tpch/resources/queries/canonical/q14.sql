@@ -10,4 +10,4 @@ FROM
     INNER JOIN part ON l_partkey = p_partkey
 WHERE
     l_shipdate >= CAST('1993-11-01' AS DATE)
-    AND l_shipdate < CAST('1993-11-01' AS DATE) + INTERVAL '1' MONTH
+    AND l_shipdate < CAST('1993-12-01' AS DATE)

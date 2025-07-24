@@ -154,13 +154,14 @@ class _LoadAndQuery(BaseBenchmark):
 
         engine_class_name = self.engine.__class__.__name__.lower()
         parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        benchmark_name = self.__class__.__name__.lower()
         engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
         from_dialect = self.engine.SQLGLOT_DIALECT
 
         try:
             # Try to load engine-specific query first
             with importlib.resources.path(
-                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{engine_class_name}", 
+                f"{engine_root_lib_name}.benchmarks.{benchmark_name}.resources.ddl.{engine_class_name}", 
                 self.DDL_FILE_NAME
             ) as ddl_path:
                 with open(ddl_path, 'r') as ddl_file:
@@ -169,7 +170,7 @@ class _LoadAndQuery(BaseBenchmark):
             # Try parent engine class name if engine-specific fails
             try:
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.{parent_class_name}", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.{parent_class_name}", 
                     self.DDL_FILE_NAME
                 ) as ddl_path:
                     with open(ddl_path, 'r') as ddl_file:
@@ -177,7 +178,7 @@ class _LoadAndQuery(BaseBenchmark):
             except (ModuleNotFoundError, FileNotFoundError):
                 # Fall back to canonical query
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.ddl.canonical", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.canonical", 
                     self.DDL_FILE_NAME
                 ) as ddl_path:
                     with open(ddl_path, 'r') as ddl_file:
@@ -228,14 +229,16 @@ class _LoadAndQuery(BaseBenchmark):
                     tc.execution_telemetry = self.benchmark_impl.load_parquet_to_delta(
                         table_name=table_name, 
                         source_data_path=self.source_data_path,
-                        table_is_precreated=True
+                        table_is_precreated=True,
+                        context_decorator=tc.context_decorator
                     )
                 else:
                     # Otherwise, use the generic load method
                     tc.execution_telemetry = self.engine.load_parquet_to_delta(
                         parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
                         table_name=table_name,
-                        table_is_precreated=True
+                        table_is_precreated=True,
+                        context_decorator=tc.context_decorator
                     )
         self.post_results()
 
@@ -255,10 +258,16 @@ class _LoadAndQuery(BaseBenchmark):
             with self.timer(phase="Query", test_item=query_name, engine=self.engine) as tc:
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to perform the query
-                    tc.execution_telemetry = self.benchmark_impl.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.benchmark_impl.execute_sql_query(
+                        prepped_query,
+                        context_decorator=tc.context_decorator
+                    )
                 else:
                     # Otherwise, use the generic query method
-                    tc.execution_telemetry = self.engine.execute_sql_query(prepped_query)
+                    tc.execution_telemetry = self.engine.execute_sql_query(
+                        prepped_query,
+                        context_decorator=tc.context_decorator
+                    )
         self.post_results()
 
     def _run_power_test(self):
@@ -288,19 +297,16 @@ class _LoadAndQuery(BaseBenchmark):
         str
             The SQL definition for the specified query.
         """
-        with importlib.resources.path(f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", f'{query_name}.sql') as query_path:
-            with open(query_path, 'r') as query_file:
-                query = query_file.read()
-
         engine_class_name = self.engine.__class__.__name__.lower()
         parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        benchmark_name = self.__class__.__name__.lower()
         engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
         from_dialect = self.engine.SQLGLOT_DIALECT
 
         try:
             # Try to load engine-specific query first
             with importlib.resources.path(
-                f"{engine_root_lib_name}.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{engine_class_name}", 
+                f"{engine_root_lib_name}.benchmarks.{benchmark_name}.resources.queries.{engine_class_name}", 
                 f'{query_name}.sql'
             ) as query_path:
                 with open(query_path, 'r') as query_file:
@@ -309,7 +315,7 @@ class _LoadAndQuery(BaseBenchmark):
             # Try parent engine class name if engine-specific fails
             try:
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.{parent_class_name}", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.queries.{parent_class_name}", 
                     f'{query_name}.sql'
                 ) as query_path:
                     with open(query_path, 'r') as query_file:
@@ -317,7 +323,7 @@ class _LoadAndQuery(BaseBenchmark):
             except (ModuleNotFoundError, FileNotFoundError):
                 # Fall back to canonical query
                 with importlib.resources.path(
-                    f"lakebench.benchmarks.{self.BENCHMARK_NAME.lower()}.resources.queries.canonical", 
+                    f"lakebench.benchmarks.{benchmark_name}.resources.queries.canonical", 
                     f'{query_name}.sql'
                 ) as query_path:
                     with open(query_path, 'r') as query_file:
@@ -328,7 +334,7 @@ class _LoadAndQuery(BaseBenchmark):
             query=query, 
             from_dialect=from_dialect, 
             to_dialect=self.engine.SQLGLOT_DIALECT, 
-            catalog=self.engine.catalog_name,
-            schema=self.engine.schema_name
-            )
+            catalog=getattr(self.engine, 'catalog_name', None),
+            schema=getattr(self.engine, 'schema_name', None)
+        )
         return prepped_query

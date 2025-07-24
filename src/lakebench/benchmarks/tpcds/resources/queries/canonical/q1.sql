@@ -2,7 +2,7 @@ WITH customer_total_return AS (
   SELECT
     sr_customer_sk AS ctr_customer_sk,
     sr_store_sk AS ctr_store_sk,
-    SUM(SR_RETURN_AMT) AS ctr_total_return
+    SUM(sr_return_amt) AS ctr_total_return
   FROM store_returns
   JOIN date_dim ON sr_returned_date_sk = d_date_sk
   WHERE d_year = 2000

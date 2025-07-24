@@ -5,7 +5,7 @@ FROM
     orders
 WHERE
     o_orderdate >= CAST('1996-09-01' AS DATE)
-    AND o_orderdate < CAST('1996-09-01' AS DATE) + INTERVAL '3' MONTH
+    AND o_orderdate < CAST('1996-12-01' AS DATE)
     AND EXISTS(
         SELECT
             *

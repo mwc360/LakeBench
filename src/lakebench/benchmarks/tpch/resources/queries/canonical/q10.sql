@@ -14,7 +14,7 @@ FROM
     INNER JOIN nation ON c_nationkey = n_nationkey
 WHERE
     o_orderdate >= CAST('1993-06-01' AS DATE)
-    AND o_orderdate < CAST('1993-06-01' AS DATE) + INTERVAL '3' MONTH
+    AND o_orderdate < CAST('1993-09-01' AS DATE)
     AND l_returnflag = 'R'
 GROUP BY
     c_custkey,
