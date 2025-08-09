@@ -7,6 +7,7 @@ from ...engines.spark import Spark
 from ...engines.duckdb import DuckDB
 from ...engines.daft import Daft
 from ...engines.polars import Polars
+from ...engines.sail import Sail
 
 import importlib.resources
 import inspect
@@ -21,7 +22,8 @@ class _LoadAndQuery(BaseBenchmark):
         Spark: None,
         DuckDB: None,
         Daft: None,
-        Polars: None
+        Polars: None,
+        Sail: None,
     }
     MODE_REGISTRY = ['load', 'query', 'power_test', 'load_and_query']
     BENCHMARK_NAME = ''
@@ -250,7 +252,7 @@ class _LoadAndQuery(BaseBenchmark):
         if inspect.currentframe().f_back.f_code.co_name not in ('run', '_run_power_test'):
             self.mode = 'query'
 
-        if isinstance(self.engine, (DuckDB, Daft, Polars)):
+        if isinstance(self.engine, (DuckDB, Daft, Polars, Sail)):
             for table_name in self.TABLE_REGISTRY:
                 self.engine.register_table(table_name)
         for query_name in self.query_list:
