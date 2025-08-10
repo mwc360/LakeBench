@@ -78,7 +78,7 @@ class Sail(BaseEngine):
                 except Exception as e:
                     raise e
             else:
-                shutil.rmtree(self.delta_abfss_schema_path)
+                shutil.rmtree(path=self.delta_abfss_schema_path, ignore_errors=True)
 
     def load_parquet_to_delta(
         self,
