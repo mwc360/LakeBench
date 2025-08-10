@@ -8,7 +8,7 @@ FROM (
   FROM (
     SELECT
       item_sk,
-      CAST(RANK() OVER (ORDER BY rank_col ASC) AS LONG) AS rnk /* RANK() is interally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
+      CAST(RANK() OVER (ORDER BY rank_col ASC) AS LONG) AS rnk /* RANK() is internally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
     FROM (
       SELECT
         ss_item_sk AS item_sk,

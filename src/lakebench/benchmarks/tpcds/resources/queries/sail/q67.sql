@@ -11,7 +11,7 @@ FROM (
     d_moy,
     s_store_id,
     sumsales,
-    CAST(RANK() OVER (PARTITION BY i_category ORDER BY sumsales DESC) AS LONG) AS rk /* RANK() is interally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
+    CAST(RANK() OVER (PARTITION BY i_category ORDER BY sumsales DESC) AS LONG) AS rk /* RANK() is internally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
   FROM (
     SELECT
       i_category,

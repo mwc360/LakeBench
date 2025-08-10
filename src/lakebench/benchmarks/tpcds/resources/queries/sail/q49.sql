@@ -16,8 +16,8 @@ FROM (
       item,
       return_ratio,
       currency_ratio,
-      CAST(RANK() OVER (ORDER BY return_ratio) AS LONG) AS return_rank, /* RANK() is interally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
-      CAST(RANK() OVER (ORDER BY currency_ratio) AS LONG) AS currency_rank /* RANK() is interally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
+      CAST(RANK() OVER (ORDER BY return_ratio) AS LONG) AS return_rank, /* RANK() is internally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
+      CAST(RANK() OVER (ORDER BY currency_ratio) AS LONG) AS currency_rank /* RANK() is internally represented as *unsigned* int; additional cast is necessary; https://github.com/lakehq/sail/issues/732 */
     FROM (
       SELECT
         ws.ws_item_sk AS item,
