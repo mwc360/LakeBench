@@ -4,6 +4,9 @@ import shutil
 from importlib.metadata import version
 from typing import Optional
 
+from pysail.spark import SparkConnectServer
+from pyspark.sql import SparkSession
+
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
@@ -14,6 +17,9 @@ class Sail(BaseEngine):
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
+
+    _sail_server: Optional[SparkConnectServer] = None
+    _spark: Optional[SparkSession] = None
 
     SQLGLOT_DIALECT = "spark"
     REQUIRED_READ_ENDPOINT = None
@@ -30,21 +36,33 @@ class Sail(BaseEngine):
         Initialize the Sail Engine Configs
         """
         super().__init__()
-        from pysail.spark import SparkConnectServer
 
-        self.sail_server = SparkConnectServer(port=50051)
-        self.sail_server.start(background=True)
-        sail_server_hostname, sail_server_port = (
-            self.sail_server.listening_address[0],
-            self.sail_server.listening_address[1],
-        )
+        if Sail._sail_server is None:
+            # create server
+            server = SparkConnectServer(port=50051)
+            server.start(background=True)
+            Sail._sail_server = server
 
-        from pyspark.sql import SparkSession
+        self.sail_server = Sail._sail_server
 
-        self.spark = SparkSession.builder.remote(
-            f"sc://{sail_server_hostname}:{sail_server_port}"
-        ).getOrCreate()
-        self.spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
+        if Sail._spark is None:
+            sail_server_hostname, sail_server_port = Sail._sail_server.listening_address
+            try:
+                spark = SparkSession.builder.remote(
+                    f"sc://{sail_server_hostname}:{sail_server_port}"
+                ).getOrCreate()
+                spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
+                Sail._spark = spark
+            except ImportError as ex:
+                if self.is_fabric:
+                    raise RuntimeError(
+                        "After upgrading to Spark 4.0 in Microsoft Fabric, restart the Python kernel with `notebookutils.session.restartPython()` in a separate cell before initializing Sail engine."
+                    ) from ex
+                else:
+                    raise RuntimeError(
+                        "After upgrading to Spark 4.0, restart the Python kernel with `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
+                    ) from ex
+        self.spark = Sail._spark
 
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()

@@ -41,7 +41,7 @@ class BaseEngine(ABC):
         try:
             from IPython.core.getipython import get_ipython
             self.notebookutils = get_ipython().user_ns.get("notebookutils")
-            self.is_fabric = True if self.notebookutils.runtime.context['productType'] == 'Fabric' else False
+            self.is_fabric = self.notebookutils.runtime.context['currentWorkspaceId'] is not None
         except:
             self.is_fabric = False
 
