@@ -54,14 +54,9 @@ class Sail(BaseEngine):
                 spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
                 Sail._spark = spark
             except ImportError as ex:
-                if self.is_fabric:
-                    raise RuntimeError(
-                        "After upgrading to Spark 4.0 in Microsoft Fabric, restart the Python kernel with `notebookutils.session.restartPython()` in a separate cell before initializing Sail engine."
-                    ) from ex
-                else:
-                    raise RuntimeError(
-                        "After upgrading to Spark 4.0, restart the Python kernel with `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
-                    ) from ex
+                raise RuntimeError(
+                    "Python kernel restart is required after package upgrade.\nRun `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
+                ) from ex
         self.spark = Sail._spark
 
         self.delta_abfss_schema_path = delta_abfss_schema_path
