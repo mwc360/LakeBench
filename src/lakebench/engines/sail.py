@@ -12,6 +12,8 @@ class Sail(BaseEngine):
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
+    sail_server = None
+    spark = None
     SQLGLOT_DIALECT = "spark"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -29,13 +31,13 @@ class Sail(BaseEngine):
         super().__init__()
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
-        if not hasattr(self, 'sail_server'):
+        if self.sail_server is None:
             # create server
             server = SparkConnectServer(port=50051)
             server.start(background=True)
             self.sail_server = server
 
-        if not hasattr(self, 'spark'):
+        if self.spark is None:
             sail_server_hostname, sail_server_port = self.sail_server.listening_address
             try:
                 spark = SparkSession.builder.remote(
