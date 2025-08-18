@@ -3,6 +3,7 @@ from typing import Optional
 import posixpath
 from importlib.metadata import version
 from decimal import Decimal
+import shutil
 
 class BaseEngine(ABC):
     """
@@ -95,6 +96,18 @@ class BaseEngine(ABC):
 
         job_cost = Decimal(self.cost_per_hour) * (Decimal(duration_ms) / Decimal(3600000))  # Convert ms to hours
         return job_cost.quantize(Decimal('0.0000000000'))  # Ensure precision matches DECIMAL(18,10)
+    
+    def create_schema_if_not_exists(self, drop_before_create: bool = True):
+        if drop_before_create:
+            if self.is_fabric:
+                try:
+                    self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    raise e
+            else:
+                shutil.rmtree(path=self.delta_abfss_schema_path, ignore_errors=True)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """

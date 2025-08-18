@@ -1,11 +1,7 @@
 import os
 import posixpath
-import shutil
 from importlib.metadata import version
 from typing import Optional
-
-from pysail.spark import SparkConnectServer
-from pyspark.sql import SparkSession
 
 from .base import BaseEngine
 from .delta_rs import DeltaRs
@@ -36,6 +32,8 @@ class Sail(BaseEngine):
         Initialize the Sail Engine Configs
         """
         super().__init__()
+        from pysail.spark import SparkConnectServer
+        from pyspark.sql import SparkSession
 
         if Sail._sail_server is None:
             # create server
@@ -80,18 +78,6 @@ class Sail(BaseEngine):
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(
             self, "_FABRIC_USD_COST_PER_VCORE_HOUR", None
         )
-
-    def create_schema_if_not_exists(self, drop_before_create: bool = True):
-        if drop_before_create:
-            if self.is_fabric:
-                try:
-                    self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-                except FileNotFoundError:
-                    pass
-                except Exception as e:
-                    raise e
-            else:
-                shutil.rmtree(path=self.delta_abfss_schema_path, ignore_errors=True)
 
     def load_parquet_to_delta(
         self,

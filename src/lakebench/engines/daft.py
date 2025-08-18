@@ -44,16 +44,6 @@ class Daft(BaseEngine):
             
         self.version: str = f"{version('daft')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
-
-    def create_schema_if_not_exists(self, drop_before_create: bool = True):
-        if drop_before_create:
-            try:
-                self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-            except FileNotFoundError:
-                pass
-            except Exception as e:
-                raise e
-        # no need to create schema for Python engines
         
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         table_df = self.daft.read_parquet(
