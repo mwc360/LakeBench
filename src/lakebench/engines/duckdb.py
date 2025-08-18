@@ -10,7 +10,6 @@ class DuckDB(BaseEngine):
     """
     DuckDB Engine for ELT Benchmarks.
     """
-    import duckdb
     SQLGLOT_DIALECT = "duckdb"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -26,7 +25,8 @@ class DuckDB(BaseEngine):
         Initialize the DuckDB Engine Configs
         """
         super().__init__()
-        self.duckdb = self.duckdb.connect()
+        import duckdb
+        self.duckdb = duckdb.connect()
         if self.delta_abfss_schema_path.startswith("abfss://"):
             if self.is_fabric:
                 os.environ["AZURE_STORAGE_TOKEN"] = (

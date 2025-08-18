@@ -12,11 +12,6 @@ class Sail(BaseEngine):
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
-    from pysail.spark import SparkConnectServer
-    from pyspark.sql import SparkSession
-    _sail_server: Optional[SparkConnectServer] = None
-    _spark: Optional[SparkSession] = None
-
     SQLGLOT_DIALECT = "spark"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -32,28 +27,26 @@ class Sail(BaseEngine):
         Initialize the Sail Engine Configs
         """
         super().__init__()
-
-        if Sail._sail_server is None:
+        from pysail.spark import SparkConnectServer
+        from pyspark.sql import SparkSession
+        if not hasattr(self, 'sail_server'):
             # create server
-            server = self.SparkConnectServer(port=50051)
+            server = SparkConnectServer(port=50051)
             server.start(background=True)
-            Sail._sail_server = server
+            self.sail_server = server
 
-        self.sail_server = Sail._sail_server
-
-        if Sail._spark is None:
-            sail_server_hostname, sail_server_port = Sail._sail_server.listening_address
+        if not hasattr(self, 'spark'):
+            sail_server_hostname, sail_server_port = self.sail_server.listening_address
             try:
-                spark = self.SparkSession.builder.remote(
+                spark = SparkSession.builder.remote(
                     f"sc://{sail_server_hostname}:{sail_server_port}"
                 ).getOrCreate()
                 spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
-                Sail._spark = spark
+                self.spark = spark
             except ImportError as ex:
                 raise RuntimeError(
                     "Python kernel restart is required after package upgrade.\nRun `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
                 ) from ex
-        self.spark = Sail._spark
 
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
@@ -104,7 +97,21 @@ class Sail(BaseEngine):
         """
         Execute a SQL query using Sail.
         """
-        self.spark.sql(query).collect()
+        execute_sql = self.spark.sql(query).collect()
+
+    def execute_sql_statement(self, statement: str, context_decorator: Optional[str] = None):
+        """
+        Execute a SQL statement.
+
+        Parameters
+        ----------
+        statement : str
+            The SQL statement to execute.
+        context_decorator : Optional[str]
+            Not used by Spark, a job description is set instead.
+
+        """
+        self.spark.sql(statement)
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(
