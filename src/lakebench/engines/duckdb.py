@@ -1,13 +1,16 @@
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
+
+import os
 import posixpath
-from importlib.metadata import version
 from typing import Optional
+from importlib.metadata import version
 
 class DuckDB(BaseEngine):
     """
     DuckDB Engine for ELT Benchmarks.
     """
+    import duckdb
     SQLGLOT_DIALECT = "duckdb"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -23,9 +26,18 @@ class DuckDB(BaseEngine):
         Initialize the DuckDB Engine Configs
         """
         super().__init__()
-        import duckdb
-        self.duckdb = duckdb.connect()
-        self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{self.notebookutils.credentials.getToken('storage')}') ;""")
+        self.duckdb = self.duckdb.connect()
+        if self.delta_abfss_schema_path.startswith("abfss://"):
+            if self.is_fabric:
+                os.environ["AZURE_STORAGE_TOKEN"] = (
+                    self.notebookutils.credentials.getToken("storage")
+                )
+            if not os.getenv("AZURE_STORAGE_TOKEN"):
+                raise ValueError(
+                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
+                )
+            
+        self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None

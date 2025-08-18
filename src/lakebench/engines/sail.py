@@ -1,11 +1,10 @@
-import os
-import posixpath
-from importlib.metadata import version
-from typing import Optional
-
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
+import os
+import posixpath
+from typing import Optional
+from importlib.metadata import version
 
 class Sail(BaseEngine):
     """
@@ -13,7 +12,8 @@ class Sail(BaseEngine):
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
-
+    from pysail.spark import SparkConnectServer
+    from pyspark.sql import SparkSession
     _sail_server: Optional[SparkConnectServer] = None
     _spark: Optional[SparkSession] = None
 
@@ -32,12 +32,10 @@ class Sail(BaseEngine):
         Initialize the Sail Engine Configs
         """
         super().__init__()
-        from pysail.spark import SparkConnectServer
-        from pyspark.sql import SparkSession
 
         if Sail._sail_server is None:
             # create server
-            server = SparkConnectServer(port=50051)
+            server = self.SparkConnectServer(port=50051)
             server.start(background=True)
             Sail._sail_server = server
 
@@ -46,7 +44,7 @@ class Sail(BaseEngine):
         if Sail._spark is None:
             sail_server_hostname, sail_server_port = Sail._sail_server.listening_address
             try:
-                spark = SparkSession.builder.remote(
+                spark = self.SparkSession.builder.remote(
                     f"sc://{sail_server_hostname}:{sail_server_port}"
                 ).getOrCreate()
                 spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
@@ -59,8 +57,6 @@ class Sail(BaseEngine):
 
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
-        self.catalog_name = None
-        self.schema_name = None
 
         if self.delta_abfss_schema_path.startswith("abfss://"):
             if self.is_fabric:
@@ -71,6 +67,9 @@ class Sail(BaseEngine):
                 raise ValueError(
                     "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
                 )
+
+        self.catalog_name = None
+        self.schema_name = None
 
         self.version: str = (
             f"""{version("pysail")} (deltalake=={version("deltalake")})"""

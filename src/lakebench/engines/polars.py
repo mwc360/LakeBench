@@ -1,6 +1,7 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
+import os
 import posixpath
 from typing import Optional
 from importlib.metadata import version
@@ -9,6 +10,7 @@ class Polars(BaseEngine):
     """
     Polars Engine for ELT Benchmarks.
     """
+    import polars as pl
     SQLGLOT_DIALECT = "duckdb"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -24,16 +26,24 @@ class Polars(BaseEngine):
         Initialize the Polars Engine Configs
         """
         super().__init__()
-        import polars as pl
-        self.pl = pl
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
+        if self.delta_abfss_schema_path.startswith("abfss://"):
+            if self.is_fabric:
+                os.environ["AZURE_STORAGE_TOKEN"] = (
+                    self.notebookutils.credentials.getToken("storage")
+                )
+            if not os.getenv("AZURE_STORAGE_TOKEN"):
+                raise ValueError(
+                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
+                )
+        
         self.storage_options={
-            "bearer_token": self.notebookutils.credentials.getToken('storage')
+            "bearer_token": os.getenv("AZURE_STORAGE_TOKEN")
         }
         self.catalog_name = None
         self.schema_name = None
-        self.sql = pl.SQLContext()
+        self.sql = self.pl.SQLContext()
 
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
