@@ -12,8 +12,8 @@ class Sail(BaseEngine):
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
-    sail_server = None
-    spark = None
+    _SAIL_SERVER = None
+    _SPARK = None
     SQLGLOT_DIALECT = "spark"
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = "abfss"
@@ -31,24 +31,26 @@ class Sail(BaseEngine):
         super().__init__()
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
-        if self.sail_server is None:
+        if Sail._SAIL_SERVER is None:
             # create server
             server = SparkConnectServer(port=50051)
             server.start(background=True)
-            self.sail_server = server
+            Sail._SAIL_SERVER = server
+        self.sail_server = Sail._SAIL_SERVER
 
-        if self.spark is None:
+        if Sail._SPARK is None:
             sail_server_hostname, sail_server_port = self.sail_server.listening_address
             try:
                 spark = SparkSession.builder.remote(
                     f"sc://{sail_server_hostname}:{sail_server_port}"
                 ).getOrCreate()
                 spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
-                self.spark = spark
+                Sail._SPARK = spark
             except ImportError as ex:
                 raise RuntimeError(
                     "Python kernel restart is required after package upgrade.\nRun `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
                 ) from ex
+        self.spark = Sail._SPARK
 
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
