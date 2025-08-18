@@ -37,11 +37,12 @@ class BaseEngine(ABC):
         self.cost_per_vcore_hour: Optional[float] = None
         self.cost_per_hour: Optional[float] = None
         self.extended_engine_metadata = {}
+        self.storage_options: dict[str, str] = {}
 
         try:
             from IPython.core.getipython import get_ipython
             self.notebookutils = get_ipython().user_ns.get("notebookutils")
-            self.is_fabric = True if self.notebookutils.runtime.context['productType'] == 'Fabric' else False
+            self.is_fabric = self.notebookutils.runtime.context['currentWorkspaceId'] is not None
         except:
             self.is_fabric = False
 
@@ -53,6 +54,11 @@ class BaseEngine(ABC):
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
+            self.storage_options = {
+                "bearer_token": self.notebookutils.credentials.getToken('storage'),
+                "use_fabric_endpoint": "true",
+                "allow_invalid_certificates": "true", # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
+            }
 
     def _get_vm_retail_rate(self, region: str, sku: str, spot: bool = False) -> float:
         import requests
@@ -179,8 +185,9 @@ class BaseEngine(ABC):
             )
         else:
             DeltaRs().write_deltalake(
-                abfss_path, 
-                table, 
+                table_or_uri=abfss_path,
+                data=table,
                 mode="append",
-                schema_mode='merge'
+                schema_mode="merge",
+                storage_options=self.storage_options,
             )
