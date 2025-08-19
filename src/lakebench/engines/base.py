@@ -57,7 +57,6 @@ class BaseEngine(ABC):
             self.extended_engine_metadata.update({'compute_region': self.region})
             self.storage_options = {
                 "bearer_token": self.notebookutils.credentials.getToken('storage'),
-                "use_fabric_endpoint": "true",
                 "allow_invalid_certificates": "true", # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
             }
 
