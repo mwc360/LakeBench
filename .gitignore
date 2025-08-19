@@ -24,9 +24,6 @@ build/
 # Jupyter Notebooks
 .ipynb_checkpoints/
 
-# VS Code
-.vscode/
-
 # PyCharm
 .idea/
 
