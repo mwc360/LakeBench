@@ -6,7 +6,6 @@ class SparkELTBench:
         import numpy as np
         self.np = np
         self.engine = engine
-        self.engine.create_schema_if_not_exists(drop_before_create=True)
 
     def create_total_sales_fact(self):
         self.engine.spark.sql("""

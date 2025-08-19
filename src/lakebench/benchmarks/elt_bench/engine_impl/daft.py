@@ -5,7 +5,7 @@ import posixpath
 class DaftELTBench:
     def __init__(self, engine : Daft):
         self.engine = engine
-
+        
         import numpy as np
         self.np = np
         self.delta_rs = DeltaRs()
