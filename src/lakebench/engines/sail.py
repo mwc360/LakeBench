@@ -31,6 +31,20 @@ class Sail(BaseEngine):
         super().__init__()
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
+        self.delta_abfss_schema_path = delta_abfss_schema_path
+        self.deltars = DeltaRs()
+        self.catalog_name = None
+        self.schema_name = None
+        if self.delta_abfss_schema_path.startswith("abfss://"):
+            if self.is_fabric:
+                os.environ["AZURE_STORAGE_TOKEN"] = (
+                    self.notebookutils.credentials.getToken("storage")
+                )
+            if not os.getenv("AZURE_STORAGE_TOKEN"):
+                raise ValueError(
+                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
+                )
+
         if Sail._SAIL_SERVER is None:
             # create server
             server = SparkConnectServer(port=50051)
@@ -51,22 +65,6 @@ class Sail(BaseEngine):
                     "Python kernel restart is required after package upgrade.\nRun `import sys; sys.exit(0)` in a separate cell before initializing Sail engine."
                 ) from ex
         self.spark = Sail._SPARK
-
-        self.delta_abfss_schema_path = delta_abfss_schema_path
-        self.deltars = DeltaRs()
-
-        if self.delta_abfss_schema_path.startswith("abfss://"):
-            if self.is_fabric:
-                os.environ["AZURE_STORAGE_TOKEN"] = (
-                    self.notebookutils.credentials.getToken("storage")
-                )
-            if not os.getenv("AZURE_STORAGE_TOKEN"):
-                raise ValueError(
-                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
-                )
-
-        self.catalog_name = None
-        self.schema_name = None
 
         self.version: str = (
             f"""{version("pysail")} (deltalake=={version("deltalake")})"""

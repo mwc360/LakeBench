@@ -29,6 +29,8 @@ class Polars(BaseEngine):
         self.pl = pl
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
+        self.catalog_name = None
+        self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
             if self.is_fabric:
                 os.environ["AZURE_STORAGE_TOKEN"] = (
@@ -42,8 +44,6 @@ class Polars(BaseEngine):
         self.storage_options={
             "bearer_token": os.getenv("AZURE_STORAGE_TOKEN")
         }
-        self.catalog_name = None
-        self.schema_name = None
         self.sql = pl.SQLContext()
 
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"

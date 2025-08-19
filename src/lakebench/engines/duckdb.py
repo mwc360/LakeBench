@@ -27,6 +27,10 @@ class DuckDB(BaseEngine):
         super().__init__()
         import duckdb
         self.duckdb = duckdb.connect()
+        self.deltars = DeltaRs()
+        self.delta_abfss_schema_path = delta_abfss_schema_path
+        self.catalog_name = None
+        self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
             if self.is_fabric:
                 os.environ["AZURE_STORAGE_TOKEN"] = (
@@ -38,10 +42,6 @@ class DuckDB(BaseEngine):
                 )
             
         self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
-        self.delta_abfss_schema_path = delta_abfss_schema_path
-        self.deltars = DeltaRs()
-        self.catalog_name = None
-        self.schema_name = None
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
