@@ -5,12 +5,14 @@ from .engine_impl.spark import SparkELTBench
 from .engine_impl.duckdb import DuckDBELTBench
 from .engine_impl.daft import DaftELTBench
 from .engine_impl.polars import PolarsELTBench
+from .engine_impl.sail import SailELTBench
 
 from ...engines.base import BaseEngine
 from ...engines.spark import Spark
 from ...engines.duckdb import DuckDB
 from ...engines.daft import Daft
 from ...engines.polars import Polars
+from ...engines.sail import Sail
 
 import posixpath
 
@@ -48,7 +50,8 @@ class ELTBench(BaseBenchmark):
         Spark: SparkELTBench,
         DuckDB: DuckDBELTBench,
         Daft: DaftELTBench,
-        Polars: PolarsELTBench
+        Polars: PolarsELTBench,
+        Sail: SailELTBench
     }
     MODE_REGISTRY = ['light', 'full']
     TABLE_REGISTRY = [
