@@ -1,4 +1,6 @@
 # LakeBench
+[![PyPI Release](https://img.shields.io/pypi/v/lakebench)](https://pypi.org/project/lakebench/)
+[![PyPI Downloads](https://img.shields.io/pepy/dt/lakebench.svg?label=PyPI%20Downloads)](https://pypi.org/project/lakebench/)
 
 🌊 LakeBench is the first Python-based, multi-modal benchmarking framework designed to evaluate performance across multiple lakehouse compute engines and ELT scenarios. Supporting a variety of engines and both industry-standard and novel benchmarks, LakeBench enables comprehensive, apples-to-apples comparisons in a single, extensible Python library.
 
