@@ -22,7 +22,19 @@ class DuckDB(BaseEngine):
             cost_per_vcore_hour: Optional[float] = None,
             ):
         """
-        Initialize the DuckDB Engine Configs
+        Initialize the DuckDB Engine Configs.
+
+        Parameters
+        ----------
+        delta_abfss_schema_path : str
+            TODO: what does it do?
+            Benchmark input data are converted from parque files to delta tables.
+            This path is the destination where those delta tables are saved to during benchmark execution.
+        cost_per_vcore_hour : Optional[float]
+            TODO: what does it mean; what is it good for?
+            In order to compare costs of benchmark execution of different engines, this parameter allows specifying the cost per vCore-hour.
+            Benchmark result table contains the cost per query.
+
         """
         super().__init__()
         import duckdb
