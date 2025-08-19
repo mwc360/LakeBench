@@ -8,7 +8,7 @@ FROM
     hits
 WHERE
     Title LIKE '%Google%'
-    AND NOT (URL LIKE '%.google.%') /*SQLGlot transpiles column NOT LIKE to NOT column LIKE which fails in Sail*/
+    AND NOT (URL LIKE '%.google.%') /* `NOT` operator requires parenthesis https://github.com/lakehq/sail/issues/729 */
     AND SearchPhrase <> ''
 GROUP BY
     SearchPhrase
