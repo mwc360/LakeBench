@@ -1,8 +1,10 @@
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
+
+import os
 import posixpath
-from importlib.metadata import version
 from typing import Optional
+from importlib.metadata import version
 
 class DuckDB(BaseEngine):
     """
@@ -25,7 +27,17 @@ class DuckDB(BaseEngine):
         super().__init__()
         import duckdb
         self.duckdb = duckdb.connect()
-        self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{self.notebookutils.credentials.getToken('storage')}') ;""")
+        if self.delta_abfss_schema_path.startswith("abfss://"):
+            if self.is_fabric:
+                os.environ["AZURE_STORAGE_TOKEN"] = (
+                    self.notebookutils.credentials.getToken("storage")
+                )
+            if not os.getenv("AZURE_STORAGE_TOKEN"):
+                raise ValueError(
+                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
+                )
+            
+        self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
@@ -33,16 +45,6 @@ class DuckDB(BaseEngine):
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
-
-    def create_schema_if_not_exists(self, drop_before_create: bool = True):
-        if drop_before_create:
-            try:
-                self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-            except FileNotFoundError:
-                pass
-            except Exception as e:
-                raise e
-        # no need to create schema for Python engines
     
     def _create_empty_table(self, table_name: str, ddl: str):
         if not ddl.strip().startswith("CREATE OR REPLACE TABLE"):

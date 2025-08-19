@@ -1,6 +1,7 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
+import os
 import posixpath
 from typing import Optional
 from importlib.metadata import version
@@ -28,8 +29,18 @@ class Polars(BaseEngine):
         self.pl = pl
         self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
+        if self.delta_abfss_schema_path.startswith("abfss://"):
+            if self.is_fabric:
+                os.environ["AZURE_STORAGE_TOKEN"] = (
+                    self.notebookutils.credentials.getToken("storage")
+                )
+            if not os.getenv("AZURE_STORAGE_TOKEN"):
+                raise ValueError(
+                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
+                )
+        
         self.storage_options={
-            "bearer_token": self.notebookutils.credentials.getToken('storage')
+            "bearer_token": os.getenv("AZURE_STORAGE_TOKEN")
         }
         self.catalog_name = None
         self.schema_name = None
@@ -37,16 +48,6 @@ class Polars(BaseEngine):
 
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
-
-    def create_schema_if_not_exists(self, drop_before_create: bool = True):
-        if drop_before_create:
-            try:
-                self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-            except FileNotFoundError:
-                pass
-            except Exception as e:
-                raise e
-        # no need to create schema for Python engines
 
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         table_df = self.pl.scan_parquet(

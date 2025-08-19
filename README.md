@@ -67,6 +67,7 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 | DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
 | Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 | Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
+| Sail            |    ✅    |   ⚠️   |   ✅  |    ✅    |
 
 > **Legend:**  
 > ✅ = Supported  
