@@ -151,6 +151,7 @@ class ELTBench(BaseBenchmark):
         None
         """
         self.mode = 'light'
+        self.engine.create_schema_if_not_exists(drop_before_create=True)
         
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine) as tc:

@@ -8,7 +8,6 @@ class SailELTBench:
         import numpy as np
         self.np = np
         self.engine = engine
-        self.engine.create_schema_if_not_exists(drop_before_create=True)
 
     def create_total_sales_fact(self):
         for table in ['store_sales', 'date_dim', 'store', 'item', 'customer']:
