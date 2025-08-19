@@ -44,7 +44,7 @@ class DuckDB(BaseEngine):
         self.catalog_name = None
         self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
-            if self.is_fabric:
+            if self.is_fabric:  # this could be moved to BaseEngine
                 os.environ["AZURE_STORAGE_TOKEN"] = (
                     self.notebookutils.credentials.getToken("storage")
                 )
