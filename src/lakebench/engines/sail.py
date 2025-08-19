@@ -82,12 +82,10 @@ class Sail(BaseEngine):
         table_is_precreated: bool = False,
         context_decorator: Optional[str] = None,
     ):
-        (
-            self.spark.read.parquet(parquet_folder_path)
-            .write.format("delta")
-            .mode("overwrite")
+        self.spark.read.parquet(parquet_folder_path) \
+            .write.format("delta") \
+            .mode("overwrite") \
             .save(posixpath.join(self.delta_abfss_schema_path, table_name))
-        )
 
     def register_table(self, table_name: str):
         """
