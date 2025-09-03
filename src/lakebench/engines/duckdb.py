@@ -48,9 +48,10 @@ class DuckDB(BaseEngine):
 
         # Write empty in-memory table as Delta
         self.deltars.write_deltalake(
-            posixpath.join(self.delta_abfss_schema_path, table_name),
-            arrow_df,
-            mode="overwrite"
+            table_or_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            data=arrow_df,
+            mode="overwrite",
+            storage_options=self.storage_options,
         )  
         # Drop the in-memory table
         self.duckdb.sql(f"DROP TABLE IF EXISTS {table_name}")
@@ -58,9 +59,10 @@ class DuckDB(BaseEngine):
     def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         arrow_df = self.duckdb.sql(f""" FROM parquet_scan('{posixpath.join(parquet_folder_path, '*.parquet')}') """).record_batch()
         self.deltars.write_deltalake(
-            posixpath.join(self.delta_abfss_schema_path, table_name),
-            arrow_df,
-            mode="overwrite"
+            table_or_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            data=arrow_df,
+            mode="overwrite",
+            storage_options=self.storage_options,
         )  
 
     def register_table(self, table_name: str):
@@ -80,12 +82,14 @@ class DuckDB(BaseEngine):
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.optimize.compact()
 
     def vacuum_table(self, table_name: str, retain_hours: int = 168, retention_check: bool = True):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.vacuum(retain_hours, enforce_retention_duration=retention_check, dry_run=False)

@@ -49,9 +49,10 @@ class DaftELTBench:
         )
 
         fact_table_df.write_deltalake(
-                posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
-                mode="overwrite"
-            ) 
+            table_or_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            mode="overwrite",
+            storage_options=self.engine.storage_options,
+        ) 
 
 
     def merge_percent_into_total_sales_fact(self, percent: float):
@@ -117,7 +118,8 @@ class DaftELTBench:
         )
 
         fact_table = self.DeltaTable(
-            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact')
+            table_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            storage_options=self.engine.storage_options,
         )
     
         fact_table.merge(

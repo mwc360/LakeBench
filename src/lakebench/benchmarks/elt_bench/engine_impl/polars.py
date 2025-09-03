@@ -1,9 +1,6 @@
 from ....engines.polars import Polars
 from ....engines.delta_rs import DeltaRs
 
-from IPython.core.getipython import get_ipython
-notebookutils = get_ipython().user_ns.get("notebookutils")
-
 import posixpath
 
 class PolarsELTBench:
@@ -14,9 +11,7 @@ class PolarsELTBench:
         self.delta_rs = DeltaRs()
         self.write_deltalake = self.delta_rs.write_deltalake
         self.DeltaTable = self.delta_rs.DeltaTable
-        self.storage_options={
-            "bearer_token": notebookutils.credentials.getToken('storage')
-        }
+        self.storage_options = engine.storage_options
         self.engine = engine
 
     def create_total_sales_fact(self):

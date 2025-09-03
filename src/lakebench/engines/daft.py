@@ -51,8 +51,9 @@ class Daft(BaseEngine):
             posixpath.join(parquet_folder_path)
         )
         table_df.write_deltalake(
-            posixpath.join(self.delta_abfss_schema_path, table_name),
-            mode="overwrite"
+            table_or_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            mode="overwrite",
+            storage_options=self.storage_options,
         ) 
 
     def register_table(self, table_name: str):
@@ -71,12 +72,14 @@ class Daft(BaseEngine):
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.optimize.compact()
 
     def vacuum_table(self, table_name: str, retain_hours: int = 168, retention_check: bool = True):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.vacuum(retain_hours, enforce_retention_duration=retention_check, dry_run=False)
