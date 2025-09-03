@@ -32,18 +32,8 @@ class Polars(BaseEngine):
         self.catalog_name = None
         self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
-            if self.is_fabric:
-                os.environ["AZURE_STORAGE_TOKEN"] = (
-                    self.notebookutils.credentials.getToken("storage")
-                )
-            if not os.getenv("AZURE_STORAGE_TOKEN"):
-                raise ValueError(
-                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
-                )
+            self._validate_and_set_azure_storage_config()
         
-        self.storage_options={
-            "bearer_token": os.getenv("AZURE_STORAGE_TOKEN")
-        }
         self.sql = pl.SQLContext()
 
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"

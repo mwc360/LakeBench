@@ -33,23 +33,14 @@ class Daft(BaseEngine):
         self.catalog_name = None
         self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
-            if self.is_fabric:
-                os.environ["AZURE_STORAGE_TOKEN"] = (
-                    self.notebookutils.credentials.getToken("storage")
-                )
-            if not os.getenv("AZURE_STORAGE_TOKEN"):
-                raise ValueError(
-                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
-                )
-
-        io_config = IOConfig(azure=AzureConfig(bearer_token=os.getenv("AZURE_STORAGE_TOKEN")))
-
-        self.daft.set_planning_config(default_io_config=io_config)
+            self._validate_and_set_azure_storage_config()
+            io_config = IOConfig(azure=AzureConfig(bearer_token=os.getenv("AZURE_STORAGE_TOKEN")))
+            self.daft.set_planning_config(default_io_config=io_config)
 
         if not self.SUPPORTS_ONELAKE:
             if 'onelake.' in self.delta_abfss_schema_path:
                 raise ValueError(
-                    f"Daft engine does not support OneLake paths. Provide an ADLS Gen2 path instead."
+                    "Daft engine does not support OneLake paths. Provide an ADLS Gen2 path instead."
                 )
             
         self.version: str = f"{version('daft')} (deltalake=={version('deltalake')})"

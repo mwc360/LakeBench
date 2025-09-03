@@ -1,6 +1,6 @@
 from abc import ABC
+import os
 from typing import Optional
-import posixpath
 from importlib.metadata import version
 from decimal import Decimal
 import shutil
@@ -55,10 +55,16 @@ class BaseEngine(ABC):
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
-            self.storage_options = {
-                "bearer_token": self.notebookutils.credentials.getToken('storage'),
-                "allow_invalid_certificates": "true", # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
-            }
+            # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
+            os.environ["AZURE_STORAGE_TOKEN"] = self.notebookutils.credentials.getToken("storage")
+
+    def _validate_and_set_azure_storage_config(self) -> None:
+        if not os.getenv("AZURE_STORAGE_TOKEN"):
+            raise ValueError("""Please store bearer token as env variable `AZURE_STORAGE_TOKEN` (via `os.environ["AZURE_STORAGE_TOKEN"] = "..."`)""")
+        self.storage_options = {
+            "bearer_token": os.getenv("AZURE_STORAGE_TOKEN"),
+            "allow_invalid_certificates": "true",  # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
+        }
 
     def _get_vm_retail_rate(self, region: str, sku: str, spot: bool = False) -> float:
         import requests
@@ -70,7 +76,6 @@ class BaseEngine(ABC):
         """
         Returns the total number of CPU cores available on the system.
         """
-        import os
         cores = os.cpu_count()
         return cores
     
