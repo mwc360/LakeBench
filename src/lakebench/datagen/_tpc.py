@@ -1,6 +1,7 @@
 import posixpath
 import os
 import importlib.util
+import shutil
 
 
 class _TPCDataGenerator:
@@ -46,39 +47,45 @@ class _TPCDataGenerator:
         import duckdb
         import pyarrow.parquet as pq
 
-        con = duckdb.connect()
-        print(f"Generating in-memory tables")
-        con.execute(f"CALL {self.GEN_UTIL}(sf={self.scale_factor})")
-        tables = [row[0] for row in con.execute("SHOW TABLES").fetchall()]
-        print(f"Generated in-memory tables: {tables}")
-
-        for table in tables:
-            sample_file = posixpath.join(self.target_mount_folder_path, f"{table}_sample.parquet")
-            full_folder_path = posixpath.join(self.target_mount_folder_path, table)
+        # cleanup target directory
+        if os.path.exists(self.target_mount_folder_path):
+            shutil.rmtree(self.target_mount_folder_path, ignore_errors=True)
             os.makedirs(self.target_mount_folder_path, exist_ok=True)
-            # Write a sample for row size estimation
-            print(f"\nSampling {table} to evaluate row count to target {self.target_row_group_size_mb}mb row groups...")
-            con.execute(f"""
-                COPY (SELECT * FROM {table} LIMIT 1000000)
-                TO '{sample_file}'
-                (FORMAT 'parquet')
-            """)
 
-            pf = pq.ParquetFile(sample_file)
-            rg = pf.metadata.row_group(0)
-            avg_row_size = rg.total_byte_size / rg.num_rows
-            #print(f"{table} sample: {rg.num_rows} rows, {rg.total_byte_size / (1024*1024):.2f} MB")
-            #print(f"Avg row size: {avg_row_size:.2f} bytes")
-            target_size_bytes = self.target_row_group_size_mb * 1024 * 1024
-            target_rows = int(target_size_bytes / avg_row_size)
-            #print(f"Target ROW_GROUP_SIZE for ~{self.target_row_group_size_mb} MB: {target_rows} rows")
+        with duckdb.connect() as con:
+            print("Generating in-memory tables")
+            con.execute(f"CALL {self.GEN_UTIL}(sf={self.scale_factor})")
+            tables = [row[0] for row in con.execute("SHOW TABLES").fetchall()]
+            print(f"Generated in-memory tables: {tables}")
 
-            # Write full table
-            print(f"Writing {table} to {full_folder_path} with ROW_GROUP_SIZE {target_rows}...")
-            con.execute(f"""
-                COPY {table} TO '{full_folder_path}'
-                (FORMAT 'parquet', ROW_GROUP_SIZE {target_rows}, PER_THREAD_OUTPUT)
-            """)
+            for table in tables:
+                sample_file = posixpath.join(self.target_mount_folder_path, f"{table}_sample.parquet")
+                full_folder_path = posixpath.join(self.target_mount_folder_path, table)
+                os.makedirs(self.target_mount_folder_path, exist_ok=True)
+                # Write a sample for row size estimation
+                print(f"\nSampling {table} to evaluate row count to target {self.target_row_group_size_mb}mb row groups...")
+                con.execute(f"""
+                    COPY (SELECT * FROM {table} LIMIT 1000000)
+                    TO '{sample_file}'
+                    (FORMAT 'parquet', OVERWRITE)
+                """)
 
-            con.execute(f"DROP TABLE {table}")
-            os.remove(sample_file)
+                with pq.ParquetFile(sample_file) as pf:
+                    rg = pf.metadata.row_group(0)
+                avg_row_size = rg.total_byte_size / rg.num_rows
+                #print(f"{table} sample: {rg.num_rows} rows, {rg.total_byte_size / (1024*1024):.2f} MB")
+                #print(f"Avg row size: {avg_row_size:.2f} bytes")
+                target_size_bytes = self.target_row_group_size_mb * 1024 * 1024
+                target_rows = int(target_size_bytes / avg_row_size)
+                #print(f"Target ROW_GROUP_SIZE for ~{self.target_row_group_size_mb} MB: {target_rows} rows")
+
+                # Write full table
+                print(f"Writing {table} to {full_folder_path} with ROW_GROUP_SIZE {target_rows}...")
+                con.execute(f"""
+                    COPY {table} TO '{full_folder_path}'
+                    (FORMAT 'parquet', ROW_GROUP_SIZE {target_rows}, PER_THREAD_OUTPUT, OVERWRITE)
+                """)
+
+                con.execute(f"DROP TABLE {table}")
+
+                os.remove(sample_file)
