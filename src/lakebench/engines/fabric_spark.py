@@ -1,6 +1,8 @@
 from .spark import Spark
 from typing import Optional
 from decimal import Decimal
+import re
+from urllib.parse import urlparse, parse_qs
 
 try:
     from IPython.core.getipython import get_ipython
@@ -38,6 +40,17 @@ class FabricSpark(Spark):
         self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
         self.cost_per_hour = self.get_total_cores() * self.cost_per_vcore_hour
+
+        url = self.spark.sparkContext.uiWebUrl
+        # Parse webUrl string
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query)
+        artifact_id = query.get("artifactId", [None])[0]
+        # Regex for GUIDs
+        guid_pattern = re.compile(r"[0-9a-fA-F-]{36}")
+        guids = guid_pattern.findall(url)
+        tenant_id = guids[0]     # after /sparkui/
+        activity_id = guids[2]  # after /activities/
 
         self.extended_engine_metadata.update({
             'spark_history_url': f"https://{self.spark_configs['spark.trident.pbienv'].lower()}.powerbi.com/workloads/de-ds/sparkmonitor/{self.spark_configs['spark.hadoop.trident.artifact.id']}/{self.spark_configs['spark.hadoop.trident.activity.id']}?ctid={self.spark_configs['spark.hadoop.trident.tenant.id']}",
