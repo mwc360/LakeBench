@@ -73,6 +73,8 @@ class FabricSpark(Spark):
             'spark.microsoft.delta.stats.injection.enabled',
             'spark.microsoft.delta.snapshot.driverMode.enabled',
             'spark.microsoft.delta.stats.collect.extended.property.setAtTableCreation',
+            'spark.microsoft.delta.targetFileSize.adaptive.enabled',
+            'spark.sql.parquet.compression.codec',
             'spark.app.id',
             'spark.cluster.name'
         ]}
