@@ -2,6 +2,7 @@ import posixpath
 import os
 import importlib.util
 import shutil
+from typing import Literal
 
 
 class _TPCDataGenerator:
@@ -10,12 +11,21 @@ class _TPCDataGenerator:
     subclasses instead.
     """
     GEN_UTIL = ''
+    runtime: Literal["fabric", "local"] = "local"
 
-    def __init__(self, scale_factor: int, target_mount_folder_path: str = None, target_row_group_size_mb: int = 128):
+    def __init__(self, scale_factor: int, target_mount_folder_path: str, target_row_group_size_mb: int = 128) -> None:
         """
         Initialize the TPC data generator with a scale factor.
 
-        :param scale_factor: The scale factor for the data generation.
+        Parameters
+        ----------
+        scale_factor: int
+            The scale factor for the data generation.
+        target_mount_folder_path: str
+            Test data will be written to this location where tables are represented as folders containing parquet files.
+        target_row_group_size_mb: int, default=128
+            Desired row group size for the generated parquet files.
+
         """
         self.scale_factor = scale_factor
         self.target_mount_folder_path = target_mount_folder_path
@@ -25,19 +35,20 @@ class _TPCDataGenerator:
             raise ImportError(
                 "DuckDB is used for data generation but is not installed. Install using `%pip install lakebench[duckdb]` or `%pip install lakebench[datagen]`"
             )
+        
+        if os.getenv("AZURE_FABRIC_SESSION_TOKEN", None) is not None:
+            from IPython.core.getipython import get_ipython
+            self.notebookutils = get_ipython().user_ns.get("notebookutils")
+            self.runtime = "fabric"
 
-    def run(self):
+    def run(self) -> None:
         """
         This method uses DuckDB to generate in-memory tables based on the specified 
         scale factor and writes them to Parquet files. It estimates the average row 
         size in MB using a sample of the data since DuckDB only supports specifying 
         the number of rows per row group. The generated tables are written to the 
         specified target folder with optimized row group sizes.
-
-        Parameters
-        ----------
-        None
-        
+       
         Notes
         -----
         - The method creates a sample Parquet file for each table to estimate row sizes.
@@ -48,8 +59,13 @@ class _TPCDataGenerator:
         import pyarrow.parquet as pq
 
         # cleanup target directory
-        if os.path.exists(self.target_mount_folder_path):
-            shutil.rmtree(self.target_mount_folder_path, ignore_errors=True)
+        if self.runtime == "fabric" and self.target_mount_folder_path.startswith("abfss://"):
+            if self.notebookutils.fs.exists(self.target_mount_folder_path):
+                self.notebookutils.fs.rm(self.target_mount_folder_path, recurse=True)
+            self.notebookutils.fs.mkdirs(self.target_mount_folder_path)
+        else:
+            if os.path.exists(self.target_mount_folder_path):
+                shutil.rmtree(self.target_mount_folder_path, ignore_errors=True)
             os.makedirs(self.target_mount_folder_path, exist_ok=True)
 
         with duckdb.connect() as con:
@@ -61,7 +77,6 @@ class _TPCDataGenerator:
             for table in tables:
                 sample_file = posixpath.join(self.target_mount_folder_path, f"{table}_sample.parquet")
                 full_folder_path = posixpath.join(self.target_mount_folder_path, table)
-                os.makedirs(self.target_mount_folder_path, exist_ok=True)
                 # Write a sample for row size estimation
                 print(f"\nSampling {table} to evaluate row count to target {self.target_row_group_size_mb}mb row groups...")
                 con.execute(f"""
@@ -88,4 +103,7 @@ class _TPCDataGenerator:
 
                 con.execute(f"DROP TABLE {table}")
 
-                os.remove(sample_file)
+                if self.runtime == "fabric" and self.target_mount_folder_path.startswith("abfss://"):
+                    self.notebookutils.fs.rm(sample_file)
+                else:
+                    os.remove(sample_file)
