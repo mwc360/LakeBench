@@ -22,9 +22,10 @@ class DuckDBClickBench:
         """).record_batch()
         
         self.engine.deltars.write_deltalake(
-            posixpath.join(self.engine.delta_abfss_schema_path, table_name),
-            arrow_df,
-            mode="append"
+            table_or_uri=posixpath.join(self.engine.delta_abfss_schema_path, table_name),
+            data=arrow_df,
+            mode="append",
+            storage_options=self.engine.storage_options,
         ) 
 
     def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):

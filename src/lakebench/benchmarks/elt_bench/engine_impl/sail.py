@@ -76,7 +76,10 @@ class SailELTBench:
               ON ss.ss_customer_sk = c.c_customer_sk
             """).toArrow()
 
-        fact_table = self.engine.deltars.DeltaTable(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
+        fact_table = self.engine.deltars.DeltaTable(
+            table_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            storage_options=self.engine.storage_options,
+        )
 
         fact_table.merge(
                 source=sampled_fact_data,
