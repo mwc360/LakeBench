@@ -1,9 +1,7 @@
 import posixpath
 import importlib.util
-from typing import Literal
 import fsspec
 from fsspec import AbstractFileSystem
-from obstore.fsspec import FsspecStore
 
 class _TPCDataGenerator:
     """
@@ -11,8 +9,6 @@ class _TPCDataGenerator:
     subclasses instead.
     """
     GEN_UTIL = ''
-    runtime: Literal["fabric", "local"] = "local"
-    fs: FsspecStore | AbstractFileSystem
 
     def __init__(self, scale_factor: int, target_mount_folder_path: str, target_row_group_size_mb: int = 128) -> None:
         """
@@ -39,11 +35,11 @@ class _TPCDataGenerator:
         
         if target_mount_folder_path.startswith("abfss://"):
             raise ValueError("abfss path currently not supported. DuckDB is used for data generation and DuckDB is not able to write to Azure remote storage as of now.")
-            # self.fs = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
+            # self.fs: FsspecStore = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
         else:
             # workaround: use original fsspec until obstore bugs are fixes:
             # * https://github.com/developmentseed/obstore/issues/555
-            self.fs = fsspec.filesystem("file")
+            self.fs: AbstractFileSystem = fsspec.filesystem("file")
         
     def run(self) -> None:
         """
