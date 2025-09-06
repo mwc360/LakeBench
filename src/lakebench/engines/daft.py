@@ -24,16 +24,14 @@ class Daft(BaseEngine):
         """
         Initialize the Daft Engine Configs
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path)
         import daft
         from daft.io import IOConfig, AzureConfig
         self.daft = daft
-        self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
-            self._validate_and_set_azure_storage_config()
             io_config = IOConfig(azure=AzureConfig(bearer_token=os.getenv("AZURE_STORAGE_TOKEN")))
             self.daft.set_planning_config(default_io_config=io_config)
 
@@ -51,9 +49,8 @@ class Daft(BaseEngine):
             posixpath.join(parquet_folder_path)
         )
         table_df.write_deltalake(
-            table_or_uri=posixpath.join(self.delta_abfss_schema_path, table_name),
+            table=posixpath.join(self.delta_abfss_schema_path, table_name),
             mode="overwrite",
-            storage_options=self.storage_options,
         ) 
 
     def register_table(self, table_name: str):

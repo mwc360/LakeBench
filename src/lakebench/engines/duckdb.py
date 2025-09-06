@@ -24,15 +24,13 @@ class DuckDB(BaseEngine):
         """
         Initialize the DuckDB Engine Configs
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path)
         import duckdb
         self.duckdb = duckdb.connect()
         self.deltars = DeltaRs()
-        self.delta_abfss_schema_path = delta_abfss_schema_path
         self.catalog_name = None
         self.schema_name = None
         if self.delta_abfss_schema_path.startswith("abfss://"):
-            self._validate_and_set_azure_storage_config()
             self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"

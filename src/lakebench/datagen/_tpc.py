@@ -1,9 +1,9 @@
 import posixpath
-import os
 import importlib.util
-import shutil
 from typing import Literal
-
+import fsspec
+from fsspec import AbstractFileSystem
+from obstore.fsspec import FsspecStore
 
 class _TPCDataGenerator:
     """
@@ -12,6 +12,7 @@ class _TPCDataGenerator:
     """
     GEN_UTIL = ''
     runtime: Literal["fabric", "local"] = "local"
+    fs: FsspecStore | AbstractFileSystem
 
     def __init__(self, scale_factor: int, target_mount_folder_path: str, target_row_group_size_mb: int = 128) -> None:
         """
@@ -36,11 +37,14 @@ class _TPCDataGenerator:
                 "DuckDB is used for data generation but is not installed. Install using `%pip install lakebench[duckdb]` or `%pip install lakebench[datagen]`"
             )
         
-        if os.getenv("AZURE_FABRIC_SESSION_TOKEN", None) is not None:
-            from IPython.core.getipython import get_ipython
-            self.notebookutils = get_ipython().user_ns.get("notebookutils")
-            self.runtime = "fabric"
-
+        if target_mount_folder_path.startswith("abfss://"):
+            raise ValueError("abfss path currently not supported. DuckDB is used for data generation and DuckDB is not able to write to Azure remote storage as of now.")
+            # self.fs = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
+        else:
+            # workaround: use original fsspec until obstore bugs are fixes:
+            # * https://github.com/developmentseed/obstore/issues/555
+            self.fs = fsspec.filesystem("file")
+        
     def run(self) -> None:
         """
         This method uses DuckDB to generate in-memory tables based on the specified 
@@ -59,14 +63,9 @@ class _TPCDataGenerator:
         import pyarrow.parquet as pq
 
         # cleanup target directory
-        if self.runtime == "fabric" and self.target_mount_folder_path.startswith("abfss://"):
-            if self.notebookutils.fs.exists(self.target_mount_folder_path):
-                self.notebookutils.fs.rm(self.target_mount_folder_path, recurse=True)
-            self.notebookutils.fs.mkdirs(self.target_mount_folder_path)
-        else:
-            if os.path.exists(self.target_mount_folder_path):
-                shutil.rmtree(self.target_mount_folder_path, ignore_errors=True)
-            os.makedirs(self.target_mount_folder_path, exist_ok=True)
+        if self.fs.exists(self.target_mount_folder_path):
+            self.fs.rm(self.target_mount_folder_path, recursive=True)
+        self.fs.mkdirs(self.target_mount_folder_path, exist_ok=True)
 
         with duckdb.connect() as con:
             print("Generating in-memory tables")
@@ -103,7 +102,4 @@ class _TPCDataGenerator:
 
                 con.execute(f"DROP TABLE {table}")
 
-                if self.runtime == "fabric" and self.target_mount_folder_path.startswith("abfss://"):
-                    self.notebookutils.fs.rm(sample_file)
-                else:
-                    os.remove(sample_file)
+                self.fs.rm(sample_file)

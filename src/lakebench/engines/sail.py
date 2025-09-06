@@ -1,7 +1,6 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
-import os
 import posixpath
 from typing import Optional
 from importlib.metadata import version
@@ -28,15 +27,12 @@ class Sail(BaseEngine):
         """
         Initialize the Sail Engine Configs
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path)
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
-        self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
-        if self.delta_abfss_schema_path.startswith("abfss://"):
-            self._validate_and_set_azure_storage_config()
 
         if Sail._SAIL_SERVER is None:
             # create server

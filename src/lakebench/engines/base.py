@@ -3,7 +3,10 @@ import os
 from typing import Optional
 from importlib.metadata import version
 from decimal import Decimal
-import shutil
+from urllib.parse import urlparse
+from fsspec import AbstractFileSystem
+from obstore.fsspec import FsspecStore
+import fsspec
 
 class BaseEngine(ABC):
     """
@@ -33,22 +36,24 @@ class BaseEngine(ABC):
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_SCHEMA_PREP = False
     
-    def __init__(self):
+    def __init__(self, delta_abfss_schema_path: str = None):
         self.version: str = ''
         self.cost_per_vcore_hour: Optional[float] = None
         self.cost_per_hour: Optional[float] = None
         self.extended_engine_metadata = {}
         self.storage_options: dict[str, str] = {}
+        self.delta_abfss_schema_path: str = delta_abfss_schema_path.replace("file:///", "")
 
-        try:
+        if os.getenv("AZURE_FABRIC_SESSION_TOKEN", None):
+            self.runtime = "fabric"
+        else:
+            self.runtime = "local"
+
+        if self.runtime == "fabric":
             from IPython.core.getipython import get_ipython
-            self.notebookutils = get_ipython().user_ns.get("notebookutils")
-            self.is_fabric = self.notebookutils.runtime.context['currentWorkspaceId'] is not None
-        except:
-            self.is_fabric = False
-
-        if self.is_fabric:
             import sempy.fabric as fabric
+
+            self.notebookutils = get_ipython().user_ns.get("notebookutils")
             self._fabric_rest = fabric.FabricRestClient()
             workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
@@ -57,6 +62,16 @@ class BaseEngine(ABC):
             self.extended_engine_metadata.update({'compute_region': self.region})
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
             os.environ["AZURE_STORAGE_TOKEN"] = self.notebookutils.credentials.getToken("storage")
+
+        if self.delta_abfss_schema_path is None:
+            self.fs = None
+        elif self.delta_abfss_schema_path.startswith("abfss://"):
+            self._validate_and_set_azure_storage_config()
+            self.fs = FsspecStore(protocol=urlparse(self.delta_abfss_schema_path).scheme)
+        else:
+            # workaround: use original fsspec until obstore bugs are fixes:
+            # * https://github.com/developmentseed/obstore/issues/555
+            self.fs = fsspec.filesystem("file")
 
     def _validate_and_set_azure_storage_config(self) -> None:
         if not os.getenv("AZURE_STORAGE_TOKEN"):
@@ -103,15 +118,9 @@ class BaseEngine(ABC):
     
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:
-            if self.is_fabric:
-                try:
-                    self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-                except FileNotFoundError:
-                    pass
-                except Exception as e:
-                    raise e
-            else:
-                shutil.rmtree(path=self.delta_abfss_schema_path, ignore_errors=True)
+            if self.fs.exists(self.delta_abfss_schema_path):
+                self.fs.rm(self.delta_abfss_schema_path, recursive=True)
+            self.fs.mkdir(self.delta_abfss_schema_path, create_parents=True)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """

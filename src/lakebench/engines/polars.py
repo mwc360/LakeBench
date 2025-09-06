@@ -1,7 +1,6 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
-import os
 import posixpath
 from typing import Optional
 from importlib.metadata import version
@@ -24,18 +23,13 @@ class Polars(BaseEngine):
         """
         Initialize the Polars Engine Configs
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path)
         import polars as pl
         self.pl = pl
-        self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
-        if self.delta_abfss_schema_path.startswith("abfss://"):
-            self._validate_and_set_azure_storage_config()
-        
         self.sql = pl.SQLContext()
-
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
 
