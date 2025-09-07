@@ -119,7 +119,13 @@ class BaseEngine(ABC):
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:
             if self.fs.exists(self.delta_abfss_schema_path):
-                self.fs.rm(self.delta_abfss_schema_path, recursive=True)
+                # rm() is broken for directories
+                # self.fs.rm(self.delta_abfss_schema_path, recursive=True)
+                #   https://github.com/developmentseed/obstore/issues/556
+                # workaround:
+                all_files_to_delete = self.fs.find(self.delta_abfss_schema_path, detail=False)
+                if all_files_to_delete:
+                    self.fs.rm(all_files_to_delete)
             self.fs.mkdir(self.delta_abfss_schema_path, create_parents=True)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
