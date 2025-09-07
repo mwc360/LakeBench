@@ -48,9 +48,10 @@ class DuckDBELTBench:
         """).record_batch()
 
         self.write_deltalake(
-            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
-            arrow_df,
-            mode="overwrite"
+            table_or_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            data=arrow_df,
+            mode="overwrite",
+            storage_options=self.engine.storage_options,
         )
 
     def merge_percent_into_total_sales_fact(self, percent: float):
@@ -92,7 +93,10 @@ class DuckDBELTBench:
 
         """).record_batch()
 
-        fact_table = self.DeltaTable(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
+        fact_table = self.DeltaTable(
+            table_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            storage_options=self.engine.storage_options,
+        )
 
         fact_table.merge(
                 source=synthetic_data,
