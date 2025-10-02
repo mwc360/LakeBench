@@ -2,6 +2,7 @@ import posixpath
 import importlib.util
 import fsspec
 from fsspec import AbstractFileSystem
+from lakebench.utils.path_utils import to_unix_path
 
 class _TPCDataGenerator:
     """
@@ -10,7 +11,7 @@ class _TPCDataGenerator:
     """
     GEN_UTIL = ''
 
-    def __init__(self, scale_factor: int, target_mount_folder_path: str, target_row_group_size_mb: int = 128) -> None:
+    def __init__(self, scale_factor: int, target_folder_path: str, target_row_group_size_mb: int = 128) -> None:
         """
         Initialize the TPC data generator with a scale factor.
 
@@ -18,14 +19,21 @@ class _TPCDataGenerator:
         ----------
         scale_factor: int
             The scale factor for the data generation.
-        target_mount_folder_path: str
+        target_folder_path: str
             Test data will be written to this location where tables are represented as folders containing parquet files.
         target_row_group_size_mb: int, default=128
             Desired row group size for the generated parquet files.
 
         """
         self.scale_factor = scale_factor
-        self.target_mount_folder_path = target_mount_folder_path
+        if target_folder_path.startswith("abfss://"):
+            raise ValueError("abfss path currently not supported. DuckDB is used for data generation and DuckDB is not able to write to Azure remote storage as of now.")
+            # self.fs: FsspecStore = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
+        else:
+            # workaround: use original fsspec until obstore bugs are fixes:
+            # * https://github.com/developmentseed/obstore/issues/555
+            self.fs: AbstractFileSystem = fsspec.filesystem("file")
+        self.target_folder_path = to_unix_path(target_folder_path)
         self.target_row_group_size_mb = target_row_group_size_mb
 
         if importlib.util.find_spec("duckdb") is None:
@@ -33,13 +41,6 @@ class _TPCDataGenerator:
                 "DuckDB is used for data generation but is not installed. Install using `%pip install lakebench[duckdb]` or `%pip install lakebench[datagen]`"
             )
         
-        if target_mount_folder_path.startswith("abfss://"):
-            raise ValueError("abfss path currently not supported. DuckDB is used for data generation and DuckDB is not able to write to Azure remote storage as of now.")
-            # self.fs: FsspecStore = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
-        else:
-            # workaround: use original fsspec until obstore bugs are fixes:
-            # * https://github.com/developmentseed/obstore/issues/555
-            self.fs: AbstractFileSystem = fsspec.filesystem("file")
         
     def run(self) -> None:
         """
@@ -59,9 +60,9 @@ class _TPCDataGenerator:
         import pyarrow.parquet as pq
 
         # cleanup target directory
-        if self.fs.exists(self.target_mount_folder_path):
-            self.fs.rm(self.target_mount_folder_path, recursive=True)
-        self.fs.mkdirs(self.target_mount_folder_path, exist_ok=True)
+        if self.fs.exists(self.target_folder_path):
+            self.fs.rm(self.target_folder_path, recursive=True)
+        self.fs.mkdirs(self.target_folder_path, exist_ok=True)
 
         with duckdb.connect() as con:
             print("Generating in-memory tables")
@@ -70,8 +71,8 @@ class _TPCDataGenerator:
             print(f"Generated in-memory tables: {tables}")
 
             for table in tables:
-                sample_file = posixpath.join(self.target_mount_folder_path, f"{table}_sample.parquet")
-                full_folder_path = posixpath.join(self.target_mount_folder_path, table)
+                sample_file = posixpath.join(self.target_folder_path, f"{table}_sample.parquet")
+                full_folder_path = posixpath.join(self.target_folder_path, table)
                 # Write a sample for row size estimation
                 print(f"\nSampling {table} to evaluate row count to target {self.target_row_group_size_mb}mb row groups...")
                 con.execute(f"""

@@ -26,7 +26,7 @@ class Spark(BaseEngine):
         """
         Initialize the SparkEngine with a Spark session.
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path=schema_abfss_path)
         from pyspark.sql import SparkSession
         import pyspark.sql.functions as sf
         self.sf = sf
