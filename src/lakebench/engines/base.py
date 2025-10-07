@@ -44,10 +44,8 @@ class BaseEngine(ABC):
         self.storage_options: dict[str, str] = {}
         self.delta_abfss_schema_path: str = delta_abfss_schema_path.replace("file:///", "").replace(chr(92), '/')
 
-        if os.getenv("AZURE_FABRIC_SESSION_TOKEN", None):
-            self.runtime = "fabric"
-        else:
-            self.runtime = "local"
+        self.runtime = self._detect_runtime() if self.getattr(self, 'runtime', None) is None else self.runtime
+        self.operating_system = self._detect_os() if self.getattr(self, 'operating_system', None) is None else self.operating_system
 
         if self.runtime == "fabric":
             from IPython.core.getipython import get_ipython
@@ -63,6 +61,11 @@ class BaseEngine(ABC):
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
             os.environ["AZURE_STORAGE_TOKEN"] = self.notebookutils.credentials.getToken("storage")
 
+        self.extended_engine_metadata.update({
+            'runtime': self.runtime,
+            'os': self.operating_system
+        })
+
         if self.delta_abfss_schema_path is None:
             self.fs = None
         elif self.delta_abfss_schema_path.startswith("abfss://"):
@@ -72,6 +75,65 @@ class BaseEngine(ABC):
             # workaround: use original fsspec until obstore bugs are fixes:
             # * https://github.com/developmentseed/obstore/issues/555
             self.fs = fsspec.filesystem("file")
+
+    def _detect_runtime(self) -> str:
+        """
+        Dynamically detect the runtime/environment.
+        Returns: str - The detected service name
+        """
+        import os    
+
+        # Check for Microsoft Fabric or Synapse
+        try:
+            notebookutils = get_ipython().user_ns.get("notebookutils")
+            if notebookutils and hasattr(notebookutils, 'runtime'):
+                if hasattr(notebookutils.runtime, 'context'):
+                    context = notebookutils.runtime.context
+                    if 'productType' in context:
+                        product = context['productType'].lower()
+                        return product
+        except:
+            pass
+        
+        # Check for Databricks
+        try:
+            if 'DATABRICKS_RUNTIME_VERSION' in os.environ:
+                return "databricks"
+            try:
+                dbutils = get_ipython().user_ns.get("dbutils")
+                if dbutils:
+                    return "databricks"
+            except:
+                pass
+        except:
+            pass
+        
+        # Check for Google Colab
+        try:
+            if 'COLAB_RELEASE_TAG' in os.environ:
+                return "colab"
+        except ImportError:
+            pass
+        
+        # Default fallback
+        return "local_unknown"
+
+    def _detect_os(self) -> str:
+        """
+        Dynamically detect the operating system.
+        Returns: str - The detected OS name
+        """
+        import sys
+
+        os_platform = sys.platform.lower()
+        if os_platform.startswith('win'):
+            return 'windows'
+        elif os_platform.startswith('linux'):
+            return 'linux'
+        elif os_platform.startswith('darwin'):
+            return 'mac'
+        else:
+            return 'unknown'
 
     def _validate_and_set_azure_storage_config(self) -> None:
         if not os.getenv("AZURE_STORAGE_TOKEN"):
