@@ -26,11 +26,36 @@ class Spark(BaseEngine):
         """
         Initialize the SparkEngine with a Spark session.
         """
-        super().__init__()
+        super().__init__(delta_abfss_schema_path=schema_abfss_path)
         from pyspark.sql import SparkSession
         import pyspark.sql.functions as sf
         self.sf = sf
-        self.spark = SparkSession.builder.getOrCreate()
+
+        self.spark = SparkSession.builder
+        if self.runtime == "local_unknown":
+            self.spark = (
+                self.spark
+                    .appName("LocalSpark")
+                    .master("local[*]")
+                    .config("spark.sql.warehouse.dir", schema_abfss_path)
+                    .config("spark.driver.host", "localhost")
+                    .config("spark.driver.bindAddress", "localhost")
+                    .config("spark.ui.enabled", "false")
+                    .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+                    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+                    .config("spark.jars.packages", "io.delta:delta-spark_2.12:3.2.0")
+                    .config("spark.sql.catalogImplementation", "hive")
+            )
+            if self.operating_system == "windows":
+                # Windows-specific configurations to avoid native IO issues
+                self.spark = (
+                    self.spark
+                        .config("spark.hadoop.io.native.lib.available", "false")
+                        .config("spark.hadoop.fs.file.impl.disable.cache", "true")
+                )
+
+        self.spark = self.spark.getOrCreate()
+
         if spark_measure_telemetry:
             try:
                 from sparkmeasure import StageMetrics
@@ -41,7 +66,7 @@ class Spark(BaseEngine):
 
         self.version: str = self.spark.sparkContext.version
 
-        self.catalog_name = catalog_name
+        self.catalog_name = catalog_name if self.runtime != "local_unknown" else None
         self.schema_name = schema_name
         self.schema_abfss_path = schema_abfss_path
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
