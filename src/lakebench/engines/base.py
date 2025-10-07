@@ -42,7 +42,7 @@ class BaseEngine(ABC):
         self.cost_per_hour: Optional[float] = None
         self.extended_engine_metadata = {}
         self.storage_options: dict[str, str] = {}
-        self.delta_abfss_schema_path: str = delta_abfss_schema_path.replace("file:///", "")
+        self.delta_abfss_schema_path: str = delta_abfss_schema_path.replace("file:///", "").replace(chr(92), '/')
 
         if os.getenv("AZURE_FABRIC_SESSION_TOKEN", None):
             self.runtime = "fabric"
