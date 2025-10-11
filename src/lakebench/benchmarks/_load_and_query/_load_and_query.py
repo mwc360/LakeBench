@@ -229,15 +229,15 @@ class _LoadAndQuery(BaseBenchmark):
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to load the table
                     tc.execution_telemetry = self.benchmark_impl.load_parquet_to_delta(
+                        parquet_folder_uri=self.source_data_path,
                         table_name=table_name, 
-                        source_data_path=self.source_data_path,
                         table_is_precreated=True,
                         context_decorator=tc.context_decorator
                     )
                 else:
                     # Otherwise, use the generic load method
                     tc.execution_telemetry = self.engine.load_parquet_to_delta(
-                        parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
+                        parquet_folder_uri=posixpath.join(self.source_data_path, f"{table_name}/"), 
                         table_name=table_name,
                         table_is_precreated=True,
                         context_decorator=tc.context_decorator

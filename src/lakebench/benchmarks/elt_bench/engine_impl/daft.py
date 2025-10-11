@@ -14,24 +14,24 @@ class DaftELTBench:
 
     def create_total_sales_fact(self):
         fact_table_df = (
-            self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales/'))
+            self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'store_sales/'))
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'date_dim/')), 
                 left_on="ss_sold_date_sk", 
                 right_on="d_date_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'store/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'store/')), 
                 left_on="ss_store_sk", 
                 right_on="s_store_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'item/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'item/')), 
                 left_on="ss_item_sk", 
                 right_on="i_item_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'customer/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'customer/')), 
                 left_on="ss_customer_sk", 
                 right_on="c_customer_sk"
             )
@@ -49,7 +49,7 @@ class DaftELTBench:
         )
 
         fact_table_df.write_deltalake(
-            table_or_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            table_or_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
             mode="overwrite",
             storage_options=self.engine.storage_options,
         ) 
@@ -62,24 +62,24 @@ class DaftELTBench:
 
         
         sampled_fact_data = (
-            self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'store_sales/'))
+            self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'store_sales/'))
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'date_dim/')), 
                 left_on="ss_sold_date_sk", 
                 right_on="d_date_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'store/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'store/')), 
                 left_on="ss_store_sk", 
                 right_on="s_store_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'item/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'item/')), 
                 left_on="ss_item_sk", 
                 right_on="i_item_sk"
             )
             .join(
-                self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'customer/')), 
+                self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'customer/')), 
                 left_on="ss_customer_sk", 
                 right_on="c_customer_sk"
             )
@@ -118,7 +118,7 @@ class DaftELTBench:
         )
 
         fact_table = self.DeltaTable(
-            table_uri=posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
+            table_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
             storage_options=self.engine.storage_options,
         )
     
@@ -150,7 +150,7 @@ class DaftELTBench:
 
     def query_total_sales_fact(self):
         query_df = (
-            self.engine.daft.read_deltalake(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact/'))
+            self.engine.daft.read_deltalake(posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact/'))
                 .groupby(self.engine.daft.col("sale_date").dt.year())
                 .agg(self.engine.daft.col("total_net_profit").sum().alias("sum_net_profit"))
                 .to_pandas()

@@ -2,6 +2,7 @@ from .base import BaseEngine
 import os
 from typing import Optional
 import posixpath
+import tenacity
 
 class Spark(BaseEngine):
     """
@@ -16,9 +17,9 @@ class Spark(BaseEngine):
 
     def __init__(
             self,
-            catalog_name: Optional[str],
             schema_name: str,
-            schema_abfss_path: Optional[str] = None,
+            catalog_name: Optional[str] = None,
+            schema_uri: Optional[str] = None,
             spark_measure_telemetry: bool = False,
             cost_per_vcore_hour: Optional[float] = None,
             compute_stats_all_cols: bool = False
@@ -26,18 +27,18 @@ class Spark(BaseEngine):
         """
         Initialize the SparkEngine with a Spark session.
         """
-        super().__init__(delta_abfss_schema_path=schema_abfss_path)
+        super().__init__(schema_or_working_directory_uri=schema_uri)
         from pyspark.sql import SparkSession
         import pyspark.sql.functions as sf
         self.sf = sf
 
         self.spark = SparkSession.builder
         if self.runtime == "local_unknown":
+            warehouse_dir = posixpath.dirname(schema_uri.rstrip('/').rstrip('\\'))
             self.spark = (
                 self.spark
-                    .appName("LocalSpark")
                     .master("local[*]")
-                    .config("spark.sql.warehouse.dir", schema_abfss_path)
+                    .config("spark.sql.warehouse.dir", warehouse_dir)
                     .config("spark.driver.host", "localhost")
                     .config("spark.driver.bindAddress", "localhost")
                     .config("spark.ui.enabled", "false")
@@ -56,6 +57,7 @@ class Spark(BaseEngine):
 
         self.spark = self.spark.getOrCreate()
 
+        self.schema_uri = schema_uri
         if spark_measure_telemetry:
             try:
                 from sparkmeasure import StageMetrics
@@ -68,7 +70,6 @@ class Spark(BaseEngine):
 
         self.catalog_name = catalog_name if self.runtime != "local_unknown" else None
         self.schema_name = schema_name
-        self.schema_abfss_path = schema_abfss_path
         self.full_catalog_schema_reference : str = f"`{self.catalog_name}`.`{self.schema_name}`" if catalog_name else f"`{self.schema_name}`"
         self.cost_per_vcore_hour = cost_per_vcore_hour
         self.spark_configs = self.__get_spark_session_configs()
@@ -102,12 +103,20 @@ class Spark(BaseEngine):
             value = entry._2()
             spark_conf_dict[key] = value
         return spark_conf_dict
-
+    
+    # Use tenacity to retry on NativeIO error common in spark running on local Windows
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception(
+            lambda e: "java.lang.UnsatisfiedLinkError" in str(e) and 
+                     "NativeIO$POSIX.stat" in str(e)
+        ),
+        stop=tenacity.stop_after_attempt(2)
+    )
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         """
         Prepare an empty schema in the lakehouse.
         """
-        location_str = f"LOCATION '{posixpath.join(self.schema_abfss_path, self.schema_name)}'" if self.schema_abfss_path is not None else ''
+        location_str = f"LOCATION '{self.schema_uri}'" if self.schema_uri is not None else ''
 
         if drop_before_create:
             self.spark.sql(f"DROP SCHEMA IF EXISTS {self.full_catalog_schema_reference} CASCADE")
@@ -149,7 +158,7 @@ class Spark(BaseEngine):
         }
         return StructType([StructField(name, type_mapping[data_type], True) for name, data_type in generic_schema])
 
-    def _append_results_to_delta(self, abfss_path: str, results: list, generic_schema: list):
+    def _append_results_to_delta(self, table_uri: str, results: list, generic_schema: list):
         """
         Append an array to a Delta table.
         """
@@ -164,7 +173,7 @@ class Spark(BaseEngine):
             .option("delta.autoOptimize.autoCompact", "true") \
             .option("delta.autoOptimize.optimizeWrite", "true") \
             .mode("append") \
-            .save(abfss_path)
+            .save(table_uri)
 
     def get_total_cores(self) -> int:
         """
@@ -205,8 +214,8 @@ class Spark(BaseEngine):
 
         return cluster_config
     
-    def load_parquet_to_delta(self, parquet_folder_path: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
-        df = self.spark.read.parquet(parquet_folder_path)
+    def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
+        df = self.spark.read.parquet(parquet_folder_uri)
         if table_is_precreated:
             df.write.insertInto(table_name, overwrite=True)
         else:

@@ -35,17 +35,26 @@ class BaseEngine(ABC):
     REQUIRED_READ_ENDPOINT = None
     REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_SCHEMA_PREP = False
+    TABLE_FORMAT = 'delta'
     
-    def __init__(self, delta_abfss_schema_path: str = None):
+    def __init__(self, schema_or_working_directory_uri: str = None):
+        """
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str, optional
+            The base URI where tables are stored. For non-Spark engines, 
+            tables are stored directly under this path. For Spark engines, 
+            this serves as the root schema path where tables are created.
+        """
         self.version: str = ''
         self.cost_per_vcore_hour: Optional[float] = None
         self.cost_per_hour: Optional[float] = None
         self.extended_engine_metadata = {}
         self.storage_options: dict[str, str] = {}
-        self.delta_abfss_schema_path: str = delta_abfss_schema_path.replace("file:///", "").replace(chr(92), '/')
+        self.schema_or_working_directory_uri: str = schema_or_working_directory_uri.replace("file:///", "").replace(chr(92), '/')
 
-        self.runtime = self._detect_runtime() if self.getattr(self, 'runtime', None) is None else self.runtime
-        self.operating_system = self._detect_os() if self.getattr(self, 'operating_system', None) is None else self.operating_system
+        self.runtime = self._detect_runtime() if getattr(self, 'runtime', None) is None else self.runtime
+        self.operating_system = self._detect_os() if getattr(self, 'operating_system', None) is None else self.operating_system
 
         if self.runtime == "fabric":
             from IPython.core.getipython import get_ipython
@@ -66,12 +75,13 @@ class BaseEngine(ABC):
             'os': self.operating_system
         })
 
-        if self.delta_abfss_schema_path is None:
+        if self.schema_or_working_directory_uri is None:
             self.fs = None
-        elif self.delta_abfss_schema_path.startswith("abfss://"):
+        elif self.schema_or_working_directory_uri.startswith("abfss://"):
             self._validate_and_set_azure_storage_config()
-            self.fs = FsspecStore(protocol=urlparse(self.delta_abfss_schema_path).scheme)
+            self.fs = FsspecStore(protocol=urlparse(self.schema_or_working_directory_uri).scheme)
         else:
+            # TODO: add support for other filesystems (e.g., s3, gcs, etc.)
             # workaround: use original fsspec until obstore bugs are fixes:
             # * https://github.com/developmentseed/obstore/issues/555
             self.fs = fsspec.filesystem("file")
@@ -180,18 +190,18 @@ class BaseEngine(ABC):
     
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:
-            if self.fs.exists(self.delta_abfss_schema_path):
+            if self.fs.exists(self.schema_or_working_directory_uri):
                 try:
-                    self.fs.rm(self.delta_abfss_schema_path, recursive=True)
+                    self.fs.rm(self.schema_or_working_directory_uri, recursive=True)
                 except:
                     pass
                 # rm() is broken for directories with abfss: https://github.com/developmentseed/obstore/issues/556
-                #   self.fs.rm(self.delta_abfss_schema_path, recursive=True)
+                #   self.fs.rm(self.schema_or_working_directory_uri, recursive=True)
                 # workaround
-                all_files_to_delete = self.fs.find(self.delta_abfss_schema_path, detail=False)
+                all_files_to_delete = self.fs.find(self.schema_or_working_directory_uri, detail=False)
                 if all_files_to_delete:
                     self.fs.rm(all_files_to_delete)
-            self.fs.mkdir(self.delta_abfss_schema_path, create_parents=True)
+            self.fs.mkdir(self.schema_or_working_directory_uri, create_parents=True)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """
@@ -213,14 +223,14 @@ class BaseEngine(ABC):
         }
         return pa.schema([(name, type_mapping[data_type]) for name, data_type in generic_schema])
     
-    def _append_results_to_delta(self, abfss_path: str, results: list, generic_schema: list):
+    def _append_results_to_delta(self, table_uri: str, results: list, generic_schema: list):
         """
         Appends a list of result records to an existing Delta table.
 
         Parameters
         ----------
-        abfss_path : str
-            The ABFSS URI or where the Delta table resides.
+        table_uri : str
+            The URI of where the table resides.
         results : list of dict
             A list of row dictionaries to append. Each dictionary may include an
             'engine_metadata' key, whose contents will be stored as a MAP<STRING,STRING>.
@@ -274,7 +284,7 @@ class BaseEngine(ABC):
 
         if version('deltalake').startswith('0.'):
             DeltaRs().write_deltalake(
-                abfss_path, 
+                table_uri, 
                 table, 
                 mode="append",
                 schema_mode='merge',
@@ -282,7 +292,7 @@ class BaseEngine(ABC):
             )
         else:
             DeltaRs().write_deltalake(
-                table_or_uri=abfss_path,
+                table_or_uri=table_uri,
                 data=table,
                 mode="append",
                 schema_mode="merge",

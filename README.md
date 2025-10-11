@@ -210,7 +210,7 @@ from lakebench.engines import Polars
 from lakebench.benchmarks import ELTBench
 
 engine = Polars( 
-    delta_abfss_schema_path = 'abfss://...'
+    schema_or_working_directory_uri = 'abfss://...'
 )
 
 benchmark = ELTBench(

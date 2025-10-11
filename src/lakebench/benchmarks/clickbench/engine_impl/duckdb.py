@@ -7,22 +7,22 @@ class DuckDBClickBench:
         
         self.engine = engine
 
-    def load_parquet_to_delta(self, table_name: str, source_data_path: str, table_is_precreated: bool = False, context_decorator: str = None):
+    def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str, table_is_precreated: bool = False, context_decorator: str = None):
         """
         Loads the ClickBench parquet data into Delta format using Spark.
 
         Parameters
         ----------
-        source_data_path : str
+        parquet_folder_uri : str
             Path to the source parquet files.
         """
         arrow_df = self.engine.duckdb.sql(f"""
             SELECT * REPLACE (make_date(EventDate) AS EventDate) 
-            FROM parquet_scan('{posixpath.join(source_data_path, '*.parquet')}')
+            FROM parquet_scan('{posixpath.join(parquet_folder_uri, '*.parquet')}')
         """).record_batch()
         
         self.engine.deltars.write_deltalake(
-            table_or_uri=posixpath.join(self.engine.delta_abfss_schema_path, table_name),
+            table_or_uri=posixpath.join(self.engine.schema_or_working_directory_uri, table_name),
             data=arrow_df,
             mode="append",
             storage_options=self.engine.storage_options,
