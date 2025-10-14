@@ -156,7 +156,7 @@ class ELTBench(BaseBenchmark):
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine) as tc:
                 tc.execution_telemetry = self.engine.load_parquet_to_delta(
-                    parquet_folder_path=posixpath.join(self.source_data_path, f"{table_name}/"), 
+                    parquet_folder_uri=posixpath.join(self.source_data_path, f"{table_name}/"), 
                     table_name=table_name,
                     table_is_precreated=False,
                     context_decorator=tc.context_decorator

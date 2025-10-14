@@ -49,9 +49,8 @@ class DaftELTBench:
         )
 
         fact_table_df.write_deltalake(
-            table_or_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
-            mode="overwrite",
-            storage_options=self.engine.storage_options,
+            table=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
+            mode="overwrite"
         ) 
 
 
