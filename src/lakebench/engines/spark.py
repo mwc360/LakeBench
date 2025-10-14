@@ -74,7 +74,7 @@ class Spark(BaseEngine):
         self.cost_per_vcore_hour = cost_per_vcore_hour
         self.spark_configs = self.__get_spark_session_configs()
         self.extended_engine_metadata.update({
-            'parquet.block.size': self.spark.sparkContext._jsc.hadoopConfiguration().get("parquet.block.size"),
+            'parquet.block.size': self.spark.sparkContext._jsc.hadoopConfiguration().get("parquet.block.size") or '',
         })
         spark_configs_to_log = {k: v for k, v in self.spark_configs.items() if k in [
             'spark.executor.memory',
