@@ -60,15 +60,15 @@ class BaseEngine(ABC):
             from IPython.core.getipython import get_ipython
             import sempy.fabric as fabric
 
-            self.notebookutils = get_ipython().user_ns.get("notebookutils")
+            self._notebookutils = get_ipython().user_ns.get("notebookutils")
             self._fabric_rest = fabric.FabricRestClient()
-            workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
+            workspace_id = self._notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
-            os.environ["AZURE_STORAGE_TOKEN"] = self.notebookutils.credentials.getToken("storage")
+            os.environ["AZURE_STORAGE_TOKEN"] = self._notebookutils.credentials.getToken("storage")
 
         self.extended_engine_metadata.update({
             'runtime': self.runtime,
@@ -77,11 +77,18 @@ class BaseEngine(ABC):
 
         if self.schema_or_working_directory_uri is None:
             self.fs = None
-        elif self.schema_or_working_directory_uri.startswith("abfss://"):
+        elif self.runtime in ("fabric", "synapse"):
+            # workaround: use notebookutils filesystem for abfs due to recursive delete issues in fsspec
+            # https://github.com/developmentseed/obstore/issues/556
+            self.fs = self._notebookutils.fs
+            self.fs.mkdir = self.fs.mkdirs # notebookutils users mkdirs
             self._validate_and_set_azure_storage_config()
-            self.fs = FsspecStore(protocol=urlparse(self.schema_or_working_directory_uri).scheme)
+        elif urlparse(self.schema_or_working_directory_uri).scheme in ("s3", "gs"):
+            # TODO: test s3 and gs support
+            self.storage_options = {}
+            self.fs = fsspec.filesystem(urlparse(self.schema_or_working_directory_uri).scheme, **self.storage_options)
         else:
-            # TODO: add support for other filesystems (e.g., s3, gcs, etc.)
+            # TODO: use FsspecStore once it's #555 and #556 are fixed
             # workaround: use original fsspec until obstore bugs are fixes:
             # * https://github.com/developmentseed/obstore/issues/555
             self.fs = fsspec.filesystem("file")
@@ -191,17 +198,8 @@ class BaseEngine(ABC):
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:
             if self.fs.exists(self.schema_or_working_directory_uri):
-                try:
-                    self.fs.rm(self.schema_or_working_directory_uri, recursive=True)
-                except:
-                    pass
-                # rm() is broken for directories with abfss: https://github.com/developmentseed/obstore/issues/556
-                #   self.fs.rm(self.schema_or_working_directory_uri, recursive=True)
-                # workaround
-                all_files_to_delete = self.fs.find(self.schema_or_working_directory_uri, detail=False)
-                if all_files_to_delete:
-                    self.fs.rm(all_files_to_delete)
-            self.fs.mkdir(self.schema_or_working_directory_uri, create_parents=True)
+                self.fs.rm(self.schema_or_working_directory_uri, True)
+            self.fs.mkdir(self.schema_or_working_directory_uri)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """
