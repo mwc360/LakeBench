@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lakebench"
-version = "0.10.3"
+version = "0.10.0"
 authors = [
     { name="Miles Cole" },
 ]
@@ -22,7 +22,6 @@ classifiers = [
 dependencies = [
     "numpy>=1.24.4",
     "sqlglot==26.30.0",
-    "obstore>=0.8.1",
     "fsspec>=2025.9.0",
     "tenacity==9.1.2"
 ]
