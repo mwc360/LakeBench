@@ -56,14 +56,13 @@ class _LoadAndQuery(BaseBenchmark):
             scenario_name: str,
             scale_factor: Optional[int] = None,
             query_list: Optional[List[str]] = None,
-            parquet_mount_path: Optional[str] = None,
-            parquet_abfss_path: Optional[str] = None,
-            result_abfss_path: Optional[str] = None,
+            input_parquet_folder_uri: Optional[str] = None,
+            result_table_uri: Optional[str] = None,
             save_results: bool = False,
             run_id: Optional[str] = None
             ):
         self.scale_factor = scale_factor
-        super().__init__(engine, scenario_name, result_abfss_path, save_results, run_id=run_id)
+        super().__init__(engine, scenario_name, result_table_uri, save_results, run_id=run_id)
         if query_list is not None:
             expanded_query_list = []
             for query in query_list:
@@ -92,20 +91,7 @@ class _LoadAndQuery(BaseBenchmark):
         self.engine = engine
         self.scenario_name = scenario_name
 
-        if engine.REQUIRED_READ_ENDPOINT == 'mount':
-            if parquet_mount_path is None:
-                raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
-            self.source_data_path = parquet_mount_path
-        elif engine.REQUIRED_READ_ENDPOINT == 'abfss':
-            if parquet_abfss_path is None:
-                raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
-            self.source_data_path = parquet_abfss_path
-        else:
-            if parquet_mount_path is None and parquet_abfss_path is None:
-                raise ValueError(
-                    f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
-                )
-            self.source_data_path = parquet_abfss_path or parquet_mount_path
+        self.input_parquet_folder_uri = input_parquet_folder_uri
 
         self.benchmark_impl = self.benchmark_impl_class(self.engine) if self.benchmark_impl_class is not None else None
 
@@ -229,7 +215,7 @@ class _LoadAndQuery(BaseBenchmark):
                 if self.benchmark_impl is not None:
                     # If a specific benchmark implementation is defined, use it to load the table
                     tc.execution_telemetry = self.benchmark_impl.load_parquet_to_delta(
-                        parquet_folder_uri=self.source_data_path,
+                        parquet_folder_uri=self.input_parquet_folder_uri,
                         table_name=table_name, 
                         table_is_precreated=True,
                         context_decorator=tc.context_decorator
@@ -237,7 +223,7 @@ class _LoadAndQuery(BaseBenchmark):
                 else:
                     # Otherwise, use the generic load method
                     tc.execution_telemetry = self.engine.load_parquet_to_delta(
-                        parquet_folder_uri=posixpath.join(self.source_data_path, f"{table_name}/"), 
+                        parquet_folder_uri=posixpath.join(self.input_parquet_folder_uri, f"{table_name}/"), 
                         table_name=table_name,
                         table_is_precreated=True,
                         context_decorator=tc.context_decorator

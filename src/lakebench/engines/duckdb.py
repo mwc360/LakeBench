@@ -11,10 +11,9 @@ class DuckDB(BaseEngine):
     DuckDB Engine for ELT Benchmarks.
     """
     SQLGLOT_DIALECT = "duckdb"
-    REQUIRED_READ_ENDPOINT = None
-    REQUIRED_WRITE_ENDPOINT = "abfss" # TODO: Need to update to be generic
     SUPPORTS_ONELAKE = True
     SUPPORTS_SCHEMA_PREP = True
+    SUPPORTS_MOUNT_PATH = True
 
     def __init__(
             self, 

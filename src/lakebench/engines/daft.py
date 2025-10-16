@@ -11,10 +11,9 @@ class Daft(BaseEngine):
     Daft Engine for ELT Benchmarks.
     """
     SQLGLOT_DIALECT = "mysql"
-    REQUIRED_READ_ENDPOINT = "abfss" # TODO: Need to update to be generic
-    REQUIRED_WRITE_ENDPOINT = "abfss" # TODO: Need to update to be generic
     SUPPORTS_ONELAKE = False
     SUPPORTS_SCHEMA_PREP = False
+    SUPPORTS_MOUNT_PATH = False
 
     def __init__(
             self, 

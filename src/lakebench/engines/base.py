@@ -4,8 +4,6 @@ from typing import Optional
 from importlib.metadata import version
 from decimal import Decimal
 from urllib.parse import urlparse
-from fsspec import AbstractFileSystem
-from obstore.fsspec import FsspecStore
 import fsspec
 
 class BaseEngine(ABC):
@@ -17,10 +15,11 @@ class BaseEngine(ABC):
     SQLGLOT_DIALECT : str, optional
         Specifies the SQL dialect to be used by the engine when SQL transpiling
         is required. Default is None.
-    REQUIRED_READ_ENDPOINT : str, optional
-        Specifies `mount` or `abfss` if the engine only supports one endpoint. Default is None.
-    REQUIRED_WRITE_ENDPOINT : str, optional
-        Specifies `mount` or `abfss` if the engine only supports one endpoint. Default is None.
+
+    SUPPORTS_SCHEMA_PREP : bool
+        Indicates if the engine supports schema preparation (creation of empty table with defined schema)
+    SUPPORTS_MOUNT_PATH : bool
+        Indicates if the engine supports mount URIs (e.g., /mnt/...)
 
     Methods
     -------
@@ -32,9 +31,8 @@ class BaseEngine(ABC):
         Appends a list of data to a Delta table at the specified path.
     """
     SQLGLOT_DIALECT = None
-    REQUIRED_READ_ENDPOINT = None
-    REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_SCHEMA_PREP = False
+    SUPPORTS_MOUNT_PATH = True
     TABLE_FORMAT = 'delta'
     
     def __init__(self, schema_or_working_directory_uri: str = None):
@@ -51,7 +49,7 @@ class BaseEngine(ABC):
         self.cost_per_hour: Optional[float] = None
         self.extended_engine_metadata = {}
         self.storage_options: dict[str, str] = {}
-        self.schema_or_working_directory_uri: str = schema_or_working_directory_uri.replace("file:///", "").replace(chr(92), '/')
+        self.schema_or_working_directory_uri: str = schema_or_working_directory_uri.replace("file:///", "").replace(chr(92), '/') if schema_or_working_directory_uri else None
 
         self.runtime = self._detect_runtime() if getattr(self, 'runtime', None) is None else self.runtime
         self.operating_system = self._detect_os() if getattr(self, 'operating_system', None) is None else self.operating_system

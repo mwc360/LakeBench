@@ -29,12 +29,10 @@ class ELTBench(BaseBenchmark):
         The engine to use for executing the benchmark.
     scenario_name : str
         The name of the benchmark scenario.
-    tpcds_parquet_mount_path : str, optional
-        Path to the mounted TPC-DS parquet files. Must be the root directory containing a folder named after each table in TABLE_REGISTRY. If not provided, `tpcds_parquet_abfss_path` must be specified assuming the engine supports ABFSS.
-    tpcds_parquet_abfss_path : str, optional
-        Path to the parquet files in ABFSS. Must be the root directory containing a folder named after each table in TABLE_REGISTRY.
-    result_abfss_path : str, optional
-        ABFSS path to the table where results will be saved. Must be specified if `save_results` is True.
+    input_parquet_folder_uri : str, optional
+        Path to the input parquet files. Must be the root directory containing a folder named after each table in TABLE_REGISTRY.
+    result_table_uri : str, optional
+        Table URI where results will be saved. Must be specified if `save_results` is True.
     save_results : bool, optional
         Whether to save the benchmark results. Results can also be accessed via the `self.results` attribute after running the benchmark.
 
@@ -53,7 +51,7 @@ class ELTBench(BaseBenchmark):
         Polars: PolarsELTBench,
         Sail: SailELTBench
     }
-    MODE_REGISTRY = ['light', 'full']
+    MODE_REGISTRY = ['light']
     TABLE_REGISTRY = [
         'call_center', 'catalog_page', 'catalog_returns', 'catalog_sales',
         'customer', 'customer_address', 'customer_demographics', 'date_dim',
@@ -69,14 +67,13 @@ class ELTBench(BaseBenchmark):
             engine: BaseEngine, 
             scenario_name: str,
             scale_factor: Optional[int] = None,
-            tpcds_parquet_mount_path: Optional[str] = None,
-            tpcds_parquet_abfss_path: Optional[str] = None,
-            result_abfss_path: Optional[str] = None,
+            input_parquet_folder_uri: Optional[str] = None,
+            result_table_uri: Optional[str] = None,
             save_results: bool = False,
             run_id: Optional[str] = None
             ):
         self.scale_factor = scale_factor
-        super().__init__(engine, scenario_name, result_abfss_path, save_results, run_id=run_id)
+        super().__init__(engine, scenario_name, result_table_uri, save_results, run_id=run_id)
         for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items():
             if isinstance(engine, base_engine):
                 self.benchmark_impl_class = benchmark_impl
@@ -91,33 +88,14 @@ class ELTBench(BaseBenchmark):
                 f"No benchmark implementation registered for engine type: {type(engine).__name__} "
                 f"in benchmark '{self.__class__.__name__}'."
             )
-        
-        if isinstance(engine, Daft):
-            if tpcds_parquet_abfss_path is None:
-                raise ValueError("tpcds_parquet_abfss_path must be provided for Daft engine.")
-            self.source_data_path = tpcds_parquet_abfss_path
-        else:
-            self.source_data_path = tpcds_parquet_mount_path or tpcds_parquet_abfss_path
+
         self.engine = engine
         self.scenario_name = scenario_name
         self.benchmark_impl = self.benchmark_impl_class(
             self.engine
         )
+        self.input_parquet_folder_uri = input_parquet_folder_uri
 
-        if engine.REQUIRED_READ_ENDPOINT == 'mount':
-            if tpcds_parquet_mount_path is None:
-                raise ValueError(f"parquet_mount_path must be provided for {type(engine).__name__} engine.")
-            self.source_data_path = tpcds_parquet_mount_path
-        elif engine.REQUIRED_READ_ENDPOINT == 'abfss':
-            if tpcds_parquet_abfss_path is None:
-                raise ValueError(f"parquet_abfss_path must be provided for {type(engine).__name__} engine.")
-            self.source_data_path = tpcds_parquet_abfss_path
-        else:
-            if tpcds_parquet_mount_path is None and tpcds_parquet_abfss_path is None:
-                raise ValueError(
-                    f"Either parquet_mount_path or parquet_abfss_path must be provided for {type(engine).__name__} engine."
-                )
-            self.source_data_path = tpcds_parquet_abfss_path or tpcds_parquet_mount_path
 
     def run(self, mode: str = 'light'):
         """
@@ -156,7 +134,7 @@ class ELTBench(BaseBenchmark):
         for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine) as tc:
                 tc.execution_telemetry = self.engine.load_parquet_to_delta(
-                    parquet_folder_uri=posixpath.join(self.source_data_path, f"{table_name}/"), 
+                    parquet_folder_uri=posixpath.join(self.input_parquet_folder_uri, f"{table_name}/"), 
                     table_name=table_name,
                     table_is_precreated=False,
                     context_decorator=tc.context_decorator

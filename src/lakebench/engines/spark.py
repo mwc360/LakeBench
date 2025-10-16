@@ -9,8 +9,7 @@ class Spark(BaseEngine):
     Spark Engine for ELT Benchmarks.
     """
     SQLGLOT_DIALECT = "spark"
-    REQUIRED_READ_ENDPOINT = None
-    REQUIRED_WRITE_ENDPOINT = None
+    SUPPORTS_MOUNT_PATH = True
     SUPPORTS_ONELAKE = True
     SUPPORTS_SCHEMA_PREP = True
     

@@ -11,7 +11,7 @@ class _TPCDataGenerator:
     """
     GEN_UTIL = ''
 
-    def __init__(self, scale_factor: int, target_folder_path: str, target_row_group_size_mb: int = 128) -> None:
+    def __init__(self, scale_factor: int, target_folder_uri: str, target_row_group_size_mb: int = 128) -> None:
         """
         Initialize the TPC data generator with a scale factor.
 
@@ -19,21 +19,21 @@ class _TPCDataGenerator:
         ----------
         scale_factor: int
             The scale factor for the data generation.
-        target_folder_path: str
+        target_folder_uri: str
             Test data will be written to this location where tables are represented as folders containing parquet files.
         target_row_group_size_mb: int, default=128
             Desired row group size for the generated parquet files.
 
         """
         self.scale_factor = scale_factor
-        if target_folder_path.startswith("abfss://"):
+        if target_folder_uri.startswith("abfss://"):
             raise ValueError("abfss path currently not supported. DuckDB is used for data generation and DuckDB is not able to write to Azure remote storage as of now.")
             # self.fs: FsspecStore = FsspecStore(protocol=urlparse(target_mount_folder_path).scheme)
         else:
             # workaround: use original fsspec until obstore bugs are fixes:
             # * https://github.com/developmentseed/obstore/issues/555
             self.fs: AbstractFileSystem = fsspec.filesystem("file")
-        self.target_folder_path = to_unix_path(target_folder_path)
+        self.target_folder_uri = to_unix_path(target_folder_uri)
         self.target_row_group_size_mb = target_row_group_size_mb
 
         if importlib.util.find_spec("duckdb") is None:
@@ -60,9 +60,9 @@ class _TPCDataGenerator:
         import pyarrow.parquet as pq
 
         # cleanup target directory
-        if self.fs.exists(self.target_folder_path):
-            self.fs.rm(self.target_folder_path, recursive=True)
-        self.fs.mkdirs(self.target_folder_path, exist_ok=True)
+        if self.fs.exists(self.target_folder_uri):
+            self.fs.rm(self.target_folder_uri, recursive=True)
+        self.fs.mkdirs(self.target_folder_uri, exist_ok=True)
 
         with duckdb.connect() as con:
             print("Generating in-memory tables")
@@ -71,8 +71,8 @@ class _TPCDataGenerator:
             print(f"Generated in-memory tables: {tables}")
 
             for table in tables:
-                sample_file = posixpath.join(self.target_folder_path, f"{table}_sample.parquet")
-                full_folder_path = posixpath.join(self.target_folder_path, table)
+                sample_file = posixpath.join(self.target_folder_uri, f"{table}_sample.parquet")
+                full_folder_uri = posixpath.join(self.target_folder_uri, table)
                 # Write a sample for row size estimation
                 print(f"\nSampling {table} to evaluate row count to target {self.target_row_group_size_mb}mb row groups...")
                 con.execute(f"""
@@ -91,9 +91,9 @@ class _TPCDataGenerator:
                 #print(f"Target ROW_GROUP_SIZE for ~{self.target_row_group_size_mb} MB: {target_rows} rows")
 
                 # Write full table
-                print(f"Writing {table} to {full_folder_path} with ROW_GROUP_SIZE {target_rows}...")
+                print(f"Writing {table} to {full_folder_uri} with ROW_GROUP_SIZE {target_rows}...")
                 con.execute(f"""
-                    COPY {table} TO '{full_folder_path}'
+                    COPY {table} TO '{full_folder_uri}'
                     (FORMAT 'parquet', ROW_GROUP_SIZE {target_rows}, PER_THREAD_OUTPUT, OVERWRITE)
                 """)
 

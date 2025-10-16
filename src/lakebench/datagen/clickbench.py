@@ -4,13 +4,13 @@ from typing import Optional
 
 class ClickBenchDataGenerator:
 
-    def __init__(self, target_mount_folder_path: str = None, partitioned_files: bool = True):
+    def __init__(self, target_mount_folder_uri: str = None, partitioned_files: bool = True):
         """
         Initialize the ClickBench data generator. Technically, this just downloads the ClickBench data from the ClickHouse datasets repository.
 
         :param partitioned_files: If True, the downloaded data will be 100 partitioned files, otherwise it is one massive file. Use partitioned files for better download performance. 
         """
-        self.target_mount_folder_path = target_mount_folder_path
+        self.target_mount_folder_path = target_mount_folder_uri
         self.partitioned_files = partitioned_files
 
 
