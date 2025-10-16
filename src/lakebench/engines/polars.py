@@ -2,7 +2,7 @@ from .base import BaseEngine
 from .delta_rs import DeltaRs
 
 import posixpath
-from typing import Optional
+from typing import Any, Optional
 from importlib.metadata import version
 
 class Polars(BaseEngine):
@@ -17,12 +17,13 @@ class Polars(BaseEngine):
     def __init__(
             self, 
             schema_or_working_directory_uri: str,
-            cost_per_vcore_hour: Optional[float] = None
+            cost_per_vcore_hour: Optional[float] = None,
+            storage_options: Optional[dict[str, Any]] = None
             ):
         """
         Initialize the Polars Engine Configs
         """
-        super().__init__(schema_or_working_directory_uri)
+        super().__init__(schema_or_working_directory_uri, storage_options)
         import polars as pl
         self.pl = pl
         self.deltars = DeltaRs()

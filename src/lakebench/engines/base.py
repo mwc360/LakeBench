@@ -1,6 +1,6 @@
 from abc import ABC
 import os
-from typing import Optional
+from typing import Optional, Any
 from importlib.metadata import version
 from decimal import Decimal
 from urllib.parse import urlparse
@@ -35,7 +35,11 @@ class BaseEngine(ABC):
     SUPPORTS_MOUNT_PATH = True
     TABLE_FORMAT = 'delta'
     
-    def __init__(self, schema_or_working_directory_uri: str = None):
+    def __init__(
+            self, 
+            schema_or_working_directory_uri: str = None,
+            storage_options: Optional[dict[str, Any]] = None
+            ):
         """
         Parameters
         ----------
@@ -43,12 +47,14 @@ class BaseEngine(ABC):
             The base URI where tables are stored. For non-Spark engines, 
             tables are stored directly under this path. For Spark engines, 
             this serves as the root schema path where tables are created.
+        storeage_options : dict, optional
+            A dictionary of storage options to pass to the engine for filesystem access.
         """
         self.version: str = ''
         self.cost_per_vcore_hour: Optional[float] = None
         self.cost_per_hour: Optional[float] = None
-        self.extended_engine_metadata = {}
-        self.storage_options: dict[str, str] = {}
+        self.extended_engine_metadata: dict[str, str] = {}
+        self.storage_options: dict[str, Any] = storage_options if storage_options is not None else {}
         self.schema_or_working_directory_uri: str = schema_or_working_directory_uri.replace("file:///", "").replace(chr(92), '/') if schema_or_working_directory_uri else None
 
         self.runtime = self._detect_runtime() if getattr(self, 'runtime', None) is None else self.runtime
@@ -80,10 +86,10 @@ class BaseEngine(ABC):
             # https://github.com/developmentseed/obstore/issues/556
             self.fs = self._notebookutils.fs
             self.fs.mkdir = self.fs.mkdirs # notebookutils users mkdirs
-            self._validate_and_set_azure_storage_config()
+            if self.storage_options == {}:
+                self._validate_and_set_azure_storage_config()
         elif urlparse(self.schema_or_working_directory_uri).scheme in ("s3", "gs"):
             # TODO: test s3 and gs support
-            self.storage_options = {}
             self.fs = fsspec.filesystem(urlparse(self.schema_or_working_directory_uri).scheme, **self.storage_options)
         else:
             # TODO: use FsspecStore once it's #555 and #556 are fixed

@@ -4,7 +4,7 @@ from .delta_rs import DeltaRs
 import os
 import posixpath
 from importlib.metadata import version
-from typing import Optional
+from typing import Any, Optional
 
 class Daft(BaseEngine):
     """
