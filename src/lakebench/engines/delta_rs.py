@@ -2,7 +2,7 @@ from .base import BaseEngine
 
 class DeltaRs(BaseEngine):
     """
-    Delta-Rs Engine for ELT Benchmarks.
+    Delta-Rs Engine
     """
 
     def __init__(self):

@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 class Daft(BaseEngine):
     """
-    Daft Engine for ELT Benchmarks.
+    Daft Engine
     """
     SQLGLOT_DIALECT = "mysql"
     SUPPORTS_ONELAKE = False

@@ -7,7 +7,7 @@ from importlib.metadata import version
 
 class Polars(BaseEngine):
     """
-    Polars Engine for ELT Benchmarks.
+    Polars Engine
     """
     SQLGLOT_DIALECT = "duckdb"
     SUPPORTS_ONELAKE = True
