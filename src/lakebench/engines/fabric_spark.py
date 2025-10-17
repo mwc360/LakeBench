@@ -4,12 +4,6 @@ from decimal import Decimal
 import re
 from urllib.parse import urlparse, parse_qs
 
-try:
-    from IPython.core.getipython import get_ipython
-    utils = get_ipython().user_ns["mssparkutils"]
-except Exception as e:
-    e
-
 class FabricSpark(Spark):
     """
     Spark Engine for ELT Benchmarks.
