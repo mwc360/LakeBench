@@ -65,7 +65,9 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 
 | Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench |
 |-----------------|:--------:|:------:|:-------:|:----------:|
-| Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |
+| Spark (Generic) |    ✅    |   ✅   |   ✅  |    ✅    |
+| Fabric Spark    |    ✅    |   ✅   |   ✅  |    ✅    |
+| HDInsight Spark |    ✅    |   ✅   |   ✅  |    ✅    |
 | DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
 | Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 | Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
