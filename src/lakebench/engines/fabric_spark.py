@@ -6,7 +6,7 @@ from urllib.parse import urlparse, parse_qs
 
 class FabricSpark(Spark):
     """
-    Spark Engine for ELT Benchmarks.
+    Fabric Spark Engine
     """
 
     def __init__(
@@ -18,7 +18,19 @@ class FabricSpark(Spark):
             compute_stats_all_cols: bool = False
             ):
         """
-        Initialize the SparkEngine with a Spark session.
+        Parameters
+        ----------
+        lakehouse_name : str
+            The name of the lakehouse (catalog) to use within Fabric.
+        lakehouse_schema_name : str
+            The name of the schema (database) to use within the catalog.
+        spark_measure_telemetry : bool, default False
+            Whether to enable sparkmeasure telemetry for performance measurement.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the Spark cluster. If None, cost calculations are auto calculated
+            where possible.
+        compute_stats_all_cols : bool, default False
+            Whether to stats should be computed automatically as part of write operations.
         """
 
         super().__init__(
