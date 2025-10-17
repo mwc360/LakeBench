@@ -21,8 +21,16 @@ class Daft(BaseEngine):
             cost_per_vcore_hour: Optional[float] = None
             ):
         """
-        Initialize the Daft Engine Configs
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str
+            The base URI where tables are stored. This could be an arbitrary directory or
+            schema path within a metastore.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the compute runtime. If None, cost calculations are auto calculated
+            where possible.
         """
+
         super().__init__(schema_or_working_directory_uri)
         import daft
         from daft.io import IOConfig, AzureConfig

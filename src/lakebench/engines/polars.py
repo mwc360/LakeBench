@@ -21,8 +21,19 @@ class Polars(BaseEngine):
             storage_options: Optional[dict[str, Any]] = None
             ):
         """
-        Initialize the Polars Engine Configs
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str
+            The base URI where tables are stored. This could be an arbitrary directory or
+            schema path within a metastore.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the compute runtime. If None, cost calculations are auto calculated
+            where possible.
+        storage_options : dict, optional
+            A dictionary of storage options to pass to the engine for filesystem access. Optional as LakeBench
+            will attempt to read from environment variables depeneding on the compute runtime.
         """
+        
         super().__init__(schema_or_working_directory_uri, storage_options)
         import polars as pl
         self.pl = pl

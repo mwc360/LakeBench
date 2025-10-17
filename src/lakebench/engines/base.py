@@ -48,7 +48,7 @@ class BaseEngine(ABC):
             The base URI where tables are stored. For non-Spark engines, 
             tables are stored directly under this path. For Spark engines, 
             this serves as the root schema path where tables are created.
-        storeage_options : dict, optional
+        storage_options : dict, optional
             A dictionary of storage options to pass to the engine for filesystem access.
         """
         self.version: str = ''
