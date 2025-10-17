@@ -1,9 +1,12 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
+import os
 import posixpath
 from typing import Any, Optional
 from importlib.metadata import version
+
+
 
 class Sail(BaseEngine):
     """
@@ -33,6 +36,10 @@ class Sail(BaseEngine):
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
+        
+        # Set Sail specific environment variables
+        os.environ["SAIL_RUNTIME__ENABLE_SECONDARY"] = "true"
+        os.environ["SAIL_OPTIMIZER__ENABLE_JOIN_REORDER"] = "true"
 
         if Sail._SAIL_SERVER is None:
             # create server
@@ -86,7 +93,7 @@ class Sail(BaseEngine):
         """
         Execute a SQL query using Sail.
         """
-        execute_sql = self.spark.sql(query).collect()
+        execute_sql = self.spark.sql(query).toPandas()
 
     def execute_sql_statement(self, statement: str, context_decorator: Optional[str] = None):
         """
