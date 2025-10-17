@@ -34,7 +34,7 @@ class DuckDB(BaseEngine):
             self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_autocalc_usd_cost_per_vcore_hour', None)
     
     def _create_empty_table(self, table_name: str, ddl: str):
         if not ddl.strip().startswith("CREATE OR REPLACE TABLE"):

@@ -31,7 +31,7 @@ class Polars(BaseEngine):
         self.schema_name = None
         self.sql = pl.SQLContext()
         self.version: str = f"{version('polars')} (deltalake=={version('deltalake')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_autocalc_usd_cost_per_vcore_hour', None)
 
     def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         table_df = self.pl.scan_parquet(
