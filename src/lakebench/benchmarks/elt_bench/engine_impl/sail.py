@@ -40,7 +40,7 @@ class SailELTBench:
                 s.s_store_id, d.d_date;
         """)
 
-        df.write.format("delta").mode("overwrite").save(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
+        df.write.format("delta").mode("overwrite").save(posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'))
 
     def merge_percent_into_total_sales_fact(self, percent: float):
         seed = self.np.random.randint(1, high=1000, size=None, dtype=int)
@@ -76,7 +76,10 @@ class SailELTBench:
               ON ss.ss_customer_sk = c.c_customer_sk
             """).toArrow()
 
-        fact_table = self.engine.deltars.DeltaTable(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
+        fact_table = self.engine.deltars.DeltaTable(
+            table_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
+            storage_options=self.engine.storage_options,
+        )
 
         fact_table.merge(
                 source=sampled_fact_data,

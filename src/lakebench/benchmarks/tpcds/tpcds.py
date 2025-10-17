@@ -22,15 +22,11 @@ class TPCDS(_LoadAndQuery):
         The name of the benchmark scenario.
     query_list : list of str, optional
         List of queries to execute. Use '*' for all queries. If not specified, all queries will be run.
-    parquet_mount_path : str, optional
-        Path to the mounted parquet files. Must be the root directory containing a folder named after 
-        each table in TABLE_REGISTRY. If not provided, `parquet_abfss_path` must be specified assuming 
-        the engine supports ABFSS.
-    parquet_abfss_path : str, optional
-        Path to the parquet files in ABFSS. Must be the root directory containing a folder named after 
+    input_parquet_folder_uri : str, optional
+        Path to the input parquet files. Must be the root directory containing a folder named after 
         each table in TABLE_REGISTRY.
-    result_abfss_path : str, optional
-        ABFSS path to the table where results will be saved. Must be specified if `save_results` is True.
+    result_table_uri : str, optional
+        Table URI where results will be saved. Must be specified if `save_results` is True.
     save_results : bool
         Whether to save the benchmark results. Results can also be accessed via the `self.results` 
         attribute after running the benchmark.

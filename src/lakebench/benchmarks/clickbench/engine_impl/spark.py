@@ -6,18 +6,18 @@ class SparkClickBench:
         
         self.engine = engine
 
-    def load_parquet_to_delta(self, table_name: str, source_data_path: str, table_is_precreated: bool = False, context_decorator: str = None):
+    def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str, table_is_precreated: bool = False, context_decorator: str = None):
         """
         Loads the ClickBench parquet data into Delta format using Spark.
 
         Parameters
         ----------
-        source_data_path : str
+        parquet_folder_uri : str
             Path to the source parquet files.
         """
         from pyspark.sql import functions as sf
         # Load parquet files
-        df = self.engine.spark.read.parquet(source_data_path)
+        df = self.engine.spark.read.parquet(parquet_folder_uri)
 
         # ClickBench parquet data doesn't annotate the logical type of binary columns, therefore we cast as string.
         binary_cols = [c for c, t in df.dtypes if t == "binary"]

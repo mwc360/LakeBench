@@ -1,9 +1,10 @@
 from abc import ABC
-from typing import Optional
-import posixpath
+import os
+from typing import Optional, Any
 from importlib.metadata import version
 from decimal import Decimal
-import shutil
+from urllib.parse import urlparse
+import fsspec
 
 class BaseEngine(ABC):
     """
@@ -14,10 +15,11 @@ class BaseEngine(ABC):
     SQLGLOT_DIALECT : str, optional
         Specifies the SQL dialect to be used by the engine when SQL transpiling
         is required. Default is None.
-    REQUIRED_READ_ENDPOINT : str, optional
-        Specifies `mount` or `abfss` if the engine only supports one endpoint. Default is None.
-    REQUIRED_WRITE_ENDPOINT : str, optional
-        Specifies `mount` or `abfss` if the engine only supports one endpoint. Default is None.
+
+    SUPPORTS_SCHEMA_PREP : bool
+        Indicates if the engine supports schema preparation (creation of empty table with defined schema)
+    SUPPORTS_MOUNT_PATH : bool
+        Indicates if the engine supports mount URIs (e.g., /mnt/...)
 
     Methods
     -------
@@ -29,36 +31,138 @@ class BaseEngine(ABC):
         Appends a list of data to a Delta table at the specified path.
     """
     SQLGLOT_DIALECT = None
-    REQUIRED_READ_ENDPOINT = None
-    REQUIRED_WRITE_ENDPOINT = None
     SUPPORTS_SCHEMA_PREP = False
+    SUPPORTS_MOUNT_PATH = True
+    TABLE_FORMAT = 'delta'
     
-    def __init__(self):
+    def __init__(
+            self, 
+            schema_or_working_directory_uri: str = None,
+            storage_options: Optional[dict[str, Any]] = None
+            ):
+        """
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str, optional
+            The base URI where tables are stored. For non-Spark engines, 
+            tables are stored directly under this path. For Spark engines, 
+            this serves as the root schema path where tables are created.
+        storeage_options : dict, optional
+            A dictionary of storage options to pass to the engine for filesystem access.
+        """
         self.version: str = ''
         self.cost_per_vcore_hour: Optional[float] = None
         self.cost_per_hour: Optional[float] = None
-        self.extended_engine_metadata = {}
-        self.storage_options: dict[str, str] = {}
+        self.extended_engine_metadata: dict[str, str] = {}
+        self.storage_options: dict[str, Any] = storage_options if storage_options is not None else {}
+        self.schema_or_working_directory_uri: str = schema_or_working_directory_uri.replace("file:///", "").replace(chr(92), '/') if schema_or_working_directory_uri else None
 
-        try:
+        self.runtime = self._detect_runtime() if getattr(self, 'runtime', None) is None else self.runtime
+        self.operating_system = self._detect_os() if getattr(self, 'operating_system', None) is None else self.operating_system
+
+        if self.runtime == "fabric":
             from IPython.core.getipython import get_ipython
-            self.notebookutils = get_ipython().user_ns.get("notebookutils")
-            self.is_fabric = self.notebookutils.runtime.context['currentWorkspaceId'] is not None
-        except:
-            self.is_fabric = False
-
-        if self.is_fabric:
             import sempy.fabric as fabric
+
+            self._notebookutils = get_ipython().user_ns.get("notebookutils")
             self._fabric_rest = fabric.FabricRestClient()
-            workspace_id = self.notebookutils.runtime.context['currentWorkspaceId']
+            workspace_id = self._notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
             self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
-            self.storage_options = {
-                "bearer_token": self.notebookutils.credentials.getToken('storage'),
-                "allow_invalid_certificates": "true", # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
-            }
+            # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
+            os.environ["AZURE_STORAGE_TOKEN"] = self._notebookutils.credentials.getToken("storage")
+
+        self.extended_engine_metadata.update({
+            'runtime': self.runtime,
+            'os': self.operating_system
+        })
+
+        if self.schema_or_working_directory_uri is None:
+            self.fs = None
+        elif self.runtime in ("fabric", "synapse"):
+            # workaround: use notebookutils filesystem for abfs due to recursive delete issues in fsspec
+            # https://github.com/developmentseed/obstore/issues/556
+            self.fs = self._notebookutils.fs
+            self.fs.mkdir = self.fs.mkdirs # notebookutils users mkdirs
+            if self.storage_options == {}:
+                self._validate_and_set_azure_storage_config()
+        elif urlparse(self.schema_or_working_directory_uri).scheme in ("s3", "gs"):
+            # TODO: test s3 and gs support
+            self.fs = fsspec.filesystem(urlparse(self.schema_or_working_directory_uri).scheme, **self.storage_options)
+        else:
+            # TODO: use FsspecStore once it's #555 and #556 are fixed
+            # workaround: use original fsspec until obstore bugs are fixes:
+            # * https://github.com/developmentseed/obstore/issues/555
+            self.fs = fsspec.filesystem("file")
+
+    def _detect_runtime(self) -> str:
+        """
+        Dynamically detect the runtime/environment.
+        Returns: str - The detected service name
+        """
+        import os    
+
+        # Check for Microsoft Fabric or Synapse
+        try:
+            notebookutils = get_ipython().user_ns.get("notebookutils")
+            if notebookutils and hasattr(notebookutils, 'runtime'):
+                if hasattr(notebookutils.runtime, 'context'):
+                    context = notebookutils.runtime.context
+                    if 'productType' in context:
+                        product = context['productType'].lower()
+                        return product
+        except:
+            pass
+        
+        # Check for Databricks
+        try:
+            if 'DATABRICKS_RUNTIME_VERSION' in os.environ:
+                return "databricks"
+            try:
+                dbutils = get_ipython().user_ns.get("dbutils")
+                if dbutils:
+                    return "databricks"
+            except:
+                pass
+        except:
+            pass
+        
+        # Check for Google Colab
+        try:
+            if 'COLAB_RELEASE_TAG' in os.environ:
+                return "colab"
+        except ImportError:
+            pass
+        
+        # Default fallback
+        return "local_unknown"
+
+    def _detect_os(self) -> str:
+        """
+        Dynamically detect the operating system.
+        Returns: str - The detected OS name
+        """
+        import sys
+
+        os_platform = sys.platform.lower()
+        if os_platform.startswith('win'):
+            return 'windows'
+        elif os_platform.startswith('linux'):
+            return 'linux'
+        elif os_platform.startswith('darwin'):
+            return 'mac'
+        else:
+            return 'unknown'
+
+    def _validate_and_set_azure_storage_config(self) -> None:
+        if not os.getenv("AZURE_STORAGE_TOKEN"):
+            raise ValueError("""Please store bearer token as env variable `AZURE_STORAGE_TOKEN` (via `os.environ["AZURE_STORAGE_TOKEN"] = "..."`)""")
+        self.storage_options = {
+            "bearer_token": os.getenv("AZURE_STORAGE_TOKEN"),
+            "allow_invalid_certificates": "true",  # https://github.com/delta-io/delta-rs/issues/3243#issuecomment-2727206866
+        }
 
     def _get_vm_retail_rate(self, region: str, sku: str, spot: bool = False) -> float:
         import requests
@@ -70,7 +174,6 @@ class BaseEngine(ABC):
         """
         Returns the total number of CPU cores available on the system.
         """
-        import os
         cores = os.cpu_count()
         return cores
     
@@ -98,15 +201,9 @@ class BaseEngine(ABC):
     
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:
-            if self.is_fabric:
-                try:
-                    self.notebookutils.fs.rm(self.delta_abfss_schema_path, recurse=True)
-                except FileNotFoundError:
-                    pass
-                except Exception as e:
-                    raise e
-            else:
-                shutil.rmtree(path=self.delta_abfss_schema_path, ignore_errors=True)
+            if self.fs.exists(self.schema_or_working_directory_uri):
+                self.fs.rm(self.schema_or_working_directory_uri, True)
+            self.fs.mkdir(self.schema_or_working_directory_uri)
     
     def _convert_generic_to_specific_schema(self, generic_schema: list):
         """
@@ -128,14 +225,14 @@ class BaseEngine(ABC):
         }
         return pa.schema([(name, type_mapping[data_type]) for name, data_type in generic_schema])
     
-    def _append_results_to_delta(self, abfss_path: str, results: list, generic_schema: list):
+    def _append_results_to_delta(self, table_uri: str, results: list, generic_schema: list):
         """
         Appends a list of result records to an existing Delta table.
 
         Parameters
         ----------
-        abfss_path : str
-            The ABFSS URI or where the Delta table resides.
+        table_uri : str
+            The URI of where the table resides.
         results : list of dict
             A list of row dictionaries to append. Each dictionary may include an
             'engine_metadata' key, whose contents will be stored as a MAP<STRING,STRING>.
@@ -189,7 +286,7 @@ class BaseEngine(ABC):
 
         if version('deltalake').startswith('0.'):
             DeltaRs().write_deltalake(
-                abfss_path, 
+                table_uri, 
                 table, 
                 mode="append",
                 schema_mode='merge',
@@ -197,7 +294,7 @@ class BaseEngine(ABC):
             )
         else:
             DeltaRs().write_deltalake(
-                table_or_uri=abfss_path,
+                table_or_uri=table_uri,
                 data=table,
                 mode="append",
                 schema_mode="merge",

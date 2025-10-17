@@ -21,7 +21,9 @@ class BaseBenchmark(ABC):
         The engine used to execute the benchmark.
     scenario_name : str
         The name of the scenario being benchmarked.
-    result_abfss_path : Optional[str]
+    input_parquet_folder_uri : Optional[str]
+        The path to the input parquet files, if applicable.
+    result_table_uri : Optional[str]
         The path where benchmark results will be saved, if `save_results` is True.
     save_results : bool
         Flag indicating whether to save benchmark results to a Delta table.
@@ -39,7 +41,7 @@ class BaseBenchmark(ABC):
         Abstract method that must be implemented by subclasses to define the benchmark logic.
     post_results()
         Processes and saves benchmark results. If `save_results` is True, results are appended to a Delta table
-        at the specified `result_abfss_path`. Clears the timer results after processing.
+        at the specified `result_table_uri`. Clears the timer results after processing.
     """
     BENCHMARK_IMPL_REGISTRY: Dict[Type[BaseEngine], Type] = {}
     RESULT_SCHEMA = [
@@ -68,11 +70,25 @@ class BaseBenchmark(ABC):
     ]
     VERSION = ''
 
-    def __init__(self, engine, scenario_name: str, result_abfss_path: Optional[str], save_results: bool = False, run_id: Optional[str] = None):
+    def __init__(
+            self, 
+            engine: BaseEngine, 
+            scenario_name: str, 
+            input_parquet_folder_uri: Optional[str],
+            result_table_uri: Optional[str], 
+            save_results: bool = False, 
+            run_id: Optional[str] = None
+            ):
         self.engine = engine
         self.scenario_name = scenario_name
-        self.result_abfss_path = result_abfss_path
+        self.result_table_uri = result_table_uri
         self.save_results = save_results
+
+        if not engine.SUPPORTS_MOUNT_PATH and input_parquet_folder_uri[:1] == '/':
+            raise ValueError(
+                f"""Mount path is not supported for {type(engine).__name__} engine.
+                Please provide fully qualified uri for `input_parquet_folder_uri`."""
+            )
 
         self.header_detail_dict = {
             'run_id': run_id if run_id is not None else str(uuid.uuid1()),
@@ -124,7 +140,7 @@ class BaseBenchmark(ABC):
         Notes
         -----
         - If `save_results` is True, the results are appended to the Delta table specified by 
-          `result_abfss_path` using the `engine.append_array_to_delta` method.
+          `result_table_uri` using the `engine.append_array_to_delta` method.
         - After processing, the results are stored in `self.results` and the timer results are cleared.
         
         Examples
@@ -155,11 +171,11 @@ class BaseBenchmark(ABC):
         self.results.extend(result_array)
 
         if self.save_results:
-            if self.result_abfss_path is None:
-                raise ValueError("result_abfss_path must be provided if save_results is True.")
+            if self.result_table_uri is None:
+                raise ValueError("result_table_uri must be provided if save_results is True.")
             else:
                 try:
-                    self.engine._append_results_to_delta(self.result_abfss_path, result_array, self.RESULT_SCHEMA)
+                    self.engine._append_results_to_delta(self.result_table_uri, result_array, self.RESULT_SCHEMA)
                 except Exception as e:
                     raise e
                 finally:

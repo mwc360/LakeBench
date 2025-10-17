@@ -139,7 +139,7 @@ from lakebench.datagen import TPCHDataGenerator
 
 datagen = TPCHDataGenerator(
     scale_factor=1,
-    target_mount_folder_path='/lakehouse/default/Files/tpch_sf1'
+    target_folder_uri='/lakehouse/default/Files/tpch_sf1'
 )
 datagen.run()
 ```
@@ -150,7 +150,7 @@ from lakebench.datagen import TPCDSDataGenerator
 
 datagen = TPCDSDataGenerator(
     scale_factor=1,
-    target_mount_folder_path='/lakehouse/default/Files/tpcds_sf1'
+    target_folder_uri='/lakehouse/default/Files/tpcds_sf1'
 )
 datagen.run()
 ```
@@ -194,9 +194,9 @@ benchmark = ELTBench(
     engine=engine,
     scenario_name="sf10",
     mode="light",
-    tpcds_parquet_abfss_path="abfss://...",
+    input_parquet_folder_uri="abfss://...",
     save_results=True,
-    result_abfss_path="abfss://..."
+    result_table_uri="abfss://..."
 )
 
 benchmark.run()
@@ -210,16 +210,16 @@ from lakebench.engines import Polars
 from lakebench.benchmarks import ELTBench
 
 engine = Polars( 
-    delta_abfss_schema_path = 'abfss://...'
+    schema_or_working_directory_uri = 'abfss://...'
 )
 
 benchmark = ELTBench(
     engine=engine,
     scenario_name="sf10",
     mode="light",
-    tpcds_parquet_abfss_path="abfss://...",
+    input_parquet_folder_uri="abfss://...",
     save_results=True,
-    result_abfss_path="abfss://..."
+    result_table_uri="abfss://..."
 )
 
 benchmark.run()

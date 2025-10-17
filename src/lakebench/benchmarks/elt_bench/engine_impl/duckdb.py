@@ -48,9 +48,10 @@ class DuckDBELTBench:
         """).record_batch()
 
         self.write_deltalake(
-            posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'),
-            arrow_df,
-            mode="overwrite"
+            table_or_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
+            data=arrow_df,
+            mode="overwrite",
+            storage_options=self.engine.storage_options,
         )
 
     def merge_percent_into_total_sales_fact(self, percent: float):
@@ -82,7 +83,7 @@ class DuckDBELTBench:
                     WHERE MOD(new_uid_val, {modulo}) = 0
                 ) ss            
             JOIN 
-                delta_scan('{posixpath.join(self.engine.delta_abfss_schema_path, 'date_dim')}') d ON ss.ss_sold_date_sk = d.d_date_sk
+                delta_scan('{posixpath.join(self.engine.schema_or_working_directory_uri, 'date_dim')}') d ON ss.ss_sold_date_sk = d.d_date_sk
             JOIN 
                 store s ON ss.ss_store_sk = s.s_store_sk
             JOIN 
@@ -92,7 +93,10 @@ class DuckDBELTBench:
 
         """).record_batch()
 
-        fact_table = self.DeltaTable(posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact'))
+        fact_table = self.DeltaTable(
+            table_uri=posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact'),
+            storage_options=self.engine.storage_options,
+        )
 
         fact_table.merge(
                 source=synthetic_data,
@@ -128,5 +132,5 @@ class DuckDBELTBench:
     def query_total_sales_fact(self):
         df = self.engine.duckdb.sql(f"""
             select sum(total_net_profit), year(sale_date) 
-            from delta_scan('{posixpath.join(self.engine.delta_abfss_schema_path, 'total_sales_fact')}') group by year(sale_date)
+            from delta_scan('{posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact')}') group by year(sale_date)
         """).df()

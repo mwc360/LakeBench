@@ -1,9 +1,8 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
-import os
 import posixpath
-from typing import Optional
+from typing import Any, Optional
 from importlib.metadata import version
 
 class Sail(BaseEngine):
@@ -15,35 +14,25 @@ class Sail(BaseEngine):
     _SAIL_SERVER = None
     _SPARK = None
     SQLGLOT_DIALECT = "spark"
-    REQUIRED_READ_ENDPOINT = None
-    REQUIRED_WRITE_ENDPOINT = "abfss"
     SUPPORTS_ONELAKE = True
     SUPPORTS_SCHEMA_PREP = False
+    SUPPORTS_MOUNT_PATH = True
 
     def __init__(
         self,
-        delta_abfss_schema_path: str,
+        schema_or_working_directory_uri: str,
         cost_per_vcore_hour: Optional[float] = None,
+        storage_options: Optional[dict[str, Any]] = None
     ):
         """
         Initialize the Sail Engine Configs
         """
-        super().__init__()
+        super().__init__(schema_or_working_directory_uri, storage_options)
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
-        self.delta_abfss_schema_path = delta_abfss_schema_path
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
-        if self.delta_abfss_schema_path.startswith("abfss://"):
-            if self.is_fabric:
-                os.environ["AZURE_STORAGE_TOKEN"] = (
-                    self.notebookutils.credentials.getToken("storage")
-                )
-            if not os.getenv("AZURE_STORAGE_TOKEN"):
-                raise ValueError(
-                    "Please store bearer token as env variable `AZURE_STORAGE_TOKEN`"
-                )
 
         if Sail._SAIL_SERVER is None:
             # create server
@@ -58,7 +47,7 @@ class Sail(BaseEngine):
                 spark = SparkSession.builder.remote(
                     f"sc://{sail_server_hostname}:{sail_server_port}"
                 ).getOrCreate()
-                spark.conf.set("spark.sql.warehouse.dir", delta_abfss_schema_path)
+                spark.conf.set("spark.sql.warehouse.dir", schema_or_working_directory_uri)
                 Sail._SPARK = spark
             except ImportError as ex:
                 raise RuntimeError(
@@ -75,22 +64,22 @@ class Sail(BaseEngine):
 
     def load_parquet_to_delta(
         self,
-        parquet_folder_path: str,
+        parquet_folder_uri: str,
         table_name: str,
         table_is_precreated: bool = False,
         context_decorator: Optional[str] = None,
     ):
-        self.spark.read.parquet(parquet_folder_path) \
+        self.spark.read.parquet(parquet_folder_uri) \
             .write.format("delta") \
             .mode("overwrite") \
-            .save(posixpath.join(self.delta_abfss_schema_path, table_name))
+            .save(posixpath.join(self.schema_or_working_directory_uri, table_name))
 
     def register_table(self, table_name: str):
         """
         Register a Delta table as temporary view in Sail.
         """
         self.spark.read.format("delta").load(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            posixpath.join(self.schema_or_working_directory_uri, table_name)
         ).createOrReplaceTempView(table_name)
 
     def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
@@ -115,7 +104,8 @@ class Sail(BaseEngine):
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.schema_or_working_directory_uri, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.optimize.compact()
 
@@ -123,7 +113,8 @@ class Sail(BaseEngine):
         self, table_name: str, retain_hours: int = 168, retention_check: bool = True
     ):
         fact_table = self.deltars.DeltaTable(
-            posixpath.join(self.delta_abfss_schema_path, table_name)
+            table_uri=posixpath.join(self.schema_or_working_directory_uri, table_name),
+            storage_options=self.storage_options,
         )
         fact_table.vacuum(
             retain_hours, enforce_retention_duration=retention_check, dry_run=False

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lakebench"
-version = "0.9.1"
+version = "0.10.0"
 authors = [
     { name="Miles Cole" },
 ]
@@ -21,17 +21,19 @@ classifiers = [
 ]
 dependencies = [
     "numpy>=1.24.4",
-    "sqlglot==26.30.0"
+    "sqlglot==26.30.0",
+    "fsspec>=2025.9.0",
+    "tenacity==9.1.2"
 ]
 
 [project.optional-dependencies]
 duckdb = ["duckdb==1.3.1", "deltalake==1.0.2", "pyarrow>=15.0.0"]
 polars = ["polars==1.31.0", "deltalake==1.0.2", "pyarrow>=15.0.0"]
-daft = ["daft==0.5.7", "deltalake==0.25.5", "pyarrow>=15.0.0"]
+daft = ["daft==0.6.6", "deltalake==1.0.2", "pyarrow>=15.0.0"]
 tpcds_datagen = ["duckdb==1.3.1", "pyarrow>=15.0.0"]
 tpch_datagen = ["duckdb==1.3.1", "pyarrow>=15.0.0"]
 sparkmeasure = ["sparkmeasure==0.24.0"]
-sail = ["pysail>=0.3.4", "pyspark[connect]>=4.0.0", "deltalake>=1.0.2", "pyarrow>=15.0.0"]
+sail = ["pysail>=0.3.5", "pyspark[connect]>=4.0.0", "deltalake>=1.0.2", "pyarrow>=15.0.0"]
 
 [project.urls]
 github = "https://github.com/mwc360/LakeBench"
