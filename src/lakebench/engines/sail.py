@@ -6,9 +6,6 @@ import posixpath
 from typing import Any, Optional
 from importlib.metadata import version
 
-# Set Sail specific environment variables
-os.environ["SAIL_RUNTIME__ENABLE_SECONDARY"] = "true"
-os.environ["SAIL_OPTIMIZER__ENABLE_JOIN_REORDER"] = "true"
 
 
 class Sail(BaseEngine):
@@ -39,6 +36,10 @@ class Sail(BaseEngine):
         self.deltars = DeltaRs()
         self.catalog_name = None
         self.schema_name = None
+        
+        # Set Sail specific environment variables
+        os.environ["SAIL_RUNTIME__ENABLE_SECONDARY"] = "true"
+        os.environ["SAIL_OPTIMIZER__ENABLE_JOIN_REORDER"] = "true"
 
         if Sail._SAIL_SERVER is None:
             # create server
