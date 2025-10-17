@@ -70,7 +70,7 @@ class BaseEngine(ABC):
             workspace_id = self._notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
-            self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
+            self._autocalc_usd_cost_per_vcore_hour = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
             os.environ["AZURE_STORAGE_TOKEN"] = self._notebookutils.credentials.getToken("storage")

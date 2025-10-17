@@ -66,7 +66,7 @@ class Sail(BaseEngine):
             f"""{version("pysail")} (deltalake=={version("deltalake")})"""
         )
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(
-            self, "_FABRIC_USD_COST_PER_VCORE_HOUR", None
+            self, "_autocalc_usd_cost_per_vcore_hour", None
         )
 
     def load_parquet_to_delta(
