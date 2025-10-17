@@ -20,12 +20,10 @@ class FabricSpark(Spark):
         """
         Initialize the SparkEngine with a Spark session.
         """
-        self.lakehouse_name = lakehouse_name
-        self.lakehouse_schema_name = lakehouse_schema_name
 
         super().__init__(
-            catalog_name=self.lakehouse_name, 
-            schema_name=self.lakehouse_schema_name, 
+            catalog_name=lakehouse_name, 
+            schema_name=lakehouse_schema_name, 
             spark_measure_telemetry=spark_measure_telemetry, 
             cost_per_vcore_hour=cost_per_vcore_hour,
             compute_stats_all_cols=compute_stats_all_cols
@@ -61,6 +59,7 @@ class FabricSpark(Spark):
             'spark.synapse.vegas.cacheSize',
             'spark.native.enabled',
             'spark.gluten.enabled',
+            'spark.sql.parquet.native.writer.directWriteEnabled',
             'spark.synapse.vhd.name',
             'spark.synapse.vhd.id',
             'spark.microsoft.delta.stats.collect.extended',
@@ -68,7 +67,6 @@ class FabricSpark(Spark):
             'spark.microsoft.delta.snapshot.driverMode.enabled',
             'spark.microsoft.delta.stats.collect.extended.property.setAtTableCreation',
             'spark.microsoft.delta.targetFileSize.adaptive.enabled',
-            'spark.sql.parquet.compression.codec',
             'spark.app.id',
             'spark.cluster.name'
         ]}

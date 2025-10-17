@@ -10,7 +10,7 @@ from importlib.metadata import version
 
 class Sail(BaseEngine):
     """
-    Sail Engine for ELT Benchmarks.
+    Sail Engine
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """

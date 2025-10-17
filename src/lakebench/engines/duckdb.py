@@ -8,7 +8,7 @@ from importlib.metadata import version
 
 class DuckDB(BaseEngine):
     """
-    DuckDB Engine for ELT Benchmarks.
+    DuckDB Engine
     """
     SQLGLOT_DIALECT = "duckdb"
     SUPPORTS_ONELAKE = True
