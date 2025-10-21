@@ -10,6 +10,7 @@ class _TPCDataGenerator:
     subclasses instead.
     """
     GEN_UTIL = ''
+    GEN_TYPE = ''
 
     def __init__(self, scale_factor: int, target_folder_uri: str, target_row_group_size_mb: int = 128) -> None:
         """

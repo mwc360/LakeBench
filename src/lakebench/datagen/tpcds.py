@@ -19,3 +19,4 @@ class TPCDSDataGenerator(_TPCDataGenerator):
         Generates TPC-DS data in Parquet format based on the input scale factor and writes it to the target folder.
     """
     GEN_UTIL = 'dsdgen'
+    GEN_TYPE = 'tpds'
