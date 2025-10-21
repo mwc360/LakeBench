@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 class Daft(BaseEngine):
     """
-    Daft Engine for ELT Benchmarks.
+    Daft Engine
     """
     SQLGLOT_DIALECT = "mysql"
     SUPPORTS_ONELAKE = False
@@ -21,8 +21,16 @@ class Daft(BaseEngine):
             cost_per_vcore_hour: Optional[float] = None
             ):
         """
-        Initialize the Daft Engine Configs
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str
+            The base URI where tables are stored. This could be an arbitrary directory or
+            schema path within a metastore.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the compute runtime. If None, cost calculations are auto calculated
+            where possible.
         """
+
         super().__init__(schema_or_working_directory_uri)
         import daft
         from daft.io import IOConfig, AzureConfig
@@ -41,7 +49,7 @@ class Daft(BaseEngine):
                 )
             
         self.version: str = f"{version('daft')} (deltalake=={version('deltalake')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_autocalc_usd_cost_per_vcore_hour', None)
         
     def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str, table_is_precreated: bool = False, context_decorator: Optional[str] = None):
         table_df = self.daft.read_parquet(

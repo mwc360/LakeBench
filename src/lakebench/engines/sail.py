@@ -10,7 +10,7 @@ from importlib.metadata import version
 
 class Sail(BaseEngine):
     """
-    Sail Engine for ELT Benchmarks.
+    Sail Engine
 
     File system support: https://docs.lakesail.com/sail/main/guide/storage/
     """
@@ -28,8 +28,19 @@ class Sail(BaseEngine):
         storage_options: Optional[dict[str, Any]] = None
     ):
         """
-        Initialize the Sail Engine Configs
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str
+            The base URI where tables are stored. This could be an arbitrary directory or
+            schema path within a metastore.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the compute runtime. If None, cost calculations are auto calculated
+            where possible.
+        storage_options : dict, optional
+            A dictionary of storage options to pass to the engine for filesystem access. Optional as LakeBench
+            will attempt to read from environment variables depeneding on the compute runtime.
         """
+        
         super().__init__(schema_or_working_directory_uri, storage_options)
         from pysail.spark import SparkConnectServer
         from pyspark.sql import SparkSession
@@ -66,7 +77,7 @@ class Sail(BaseEngine):
             f"""{version("pysail")} (deltalake=={version("deltalake")})"""
         )
         self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(
-            self, "_FABRIC_USD_COST_PER_VCORE_HOUR", None
+            self, "_autocalc_usd_cost_per_vcore_hour", None
         )
 
     def load_parquet_to_delta(

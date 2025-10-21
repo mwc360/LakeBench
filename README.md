@@ -32,7 +32,7 @@ LakeBench exists to bring clarity, trust, accessibility, and relevance to engine
 
 
 ## ✅ Why LakeBench?
-- **Multi-Engine**: Benchmark Spark, DuckDB, Polars, and many more planned, side-by-side
+- **Multi-Engine**: Benchmark Spark, DuckDB, Polars, Daft, Sail and others, side-by-side
 - **Lifecycle Coverage**: Ingest, transform, maintain, and query—just like real workloads
 - **Diverse Workloads**: Test performance across varied data shapes and operations
 - **Consistent Execution**: One framework, many engines
@@ -46,7 +46,7 @@ LakeBench empowers data teams to make informed engine decisions based on real wo
 
 LakeBench currently supports four benchmarks with more to come:
 
-- **ELTBench**: An benchmark with various modes (`light`, `full`) that simulates typicaly ELT workloads:
+- **ELTBench**: An benchmark that simulates typicaly ELT workloads:
   - Raw data load (Parquet → Delta)
   - Fact table generation
   - Incremental merge processing
@@ -65,7 +65,10 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 
 | Engine          | ELTBench | TPC-DS | TPC-H   | ClickBench |
 |-----------------|:--------:|:------:|:-------:|:----------:|
-| Spark (Fabric)  |    ✅    |   ✅   |   ✅  |    ✅    |
+| Spark (Generic) |    ✅    |   ✅   |   ✅  |    ✅    |
+| Fabric Spark    |    ✅    |   ✅   |   ✅  |    ✅    |
+| Synapse Spark   |    ✅    |   ✅   |   ✅  |    ✅    |
+| HDInsight Spark |    ✅    |   ✅   |   ✅  |    ✅    |
 | DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
 | Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
 | Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
@@ -76,6 +79,28 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 > ⚠️ = Some queries fail due to syntax issues (i.e. Polars doesn't support SQL non-equi joins, Daft is missing a lot of standard SQL contructs, i.e. DATE_ADD, CROSS JOIN, Subqueries, non-equi joins, CASE with operand, etc.).
 > 🔜 = Coming Soon  
 > (Blank) = Not currently supported 
+
+## Where Can I Run LakeBench?
+Multiple modalities doesn't end at just benchmarks and engines, LakeBench also supports different runtimes and storage backends:
+
+**Runtimes**:
+  - Local (Windows)
+  - Fabric
+  - Synapse
+  - HDInsight
+  - Google Colab ⚠️
+
+**Storage Systems**:
+  - Local filesystem (Windows)
+  - OneLake
+  - ADLS gen2 (temporarily only in Fabric, Synapse, and HDInsight)
+  - S3 ⚠️
+  - GS ⚠️
+
+_* ⚠️ denotes experimental storage backends_
+
+## What Table Formats Are Supported?
+LakeBench currently only supports Delta Lake.
 
 ## 🔌 Extensibility by Design
 
@@ -122,8 +147,6 @@ Install from PyPi:
 ```bash
 pip install lakebench[duckdb,polars,daft,tpcds_datagen,tpch_datagen,sparkmeasure]
 ```
-
-_Note: in this initial beta version, all engines have only been tested inside Microsoft Fabric Python and Spark Notebooks._
 
 ## Example Usage
 To run any LakeBench benchmark, first do a one time generation of the data required for the benchmark and scale of interest. LakeBench provides datagen classes to quickly generate parquet datasets required by the benchmarks.
