@@ -1,7 +1,7 @@
-from ._tpc import _TPCDataGenerator
-class TPCHDataGenerator(_TPCDataGenerator):
+from ._tpc_rs import _TPCRsDataGenerator
+class TPCHDataGenerator(_TPCRsDataGenerator):
     """
-    This class is a wrapper for the DuckDB TPC-H data generation utility. It generates TPC-H data in Parquet format
+    This class is a wrapper of the rust-based TPC-H data generator, `tpchgen-rs`. It generates TPC-H data in Parquet format
     based on the specified scale factor and target row group size in MB.
 
     Attributes
@@ -19,3 +19,4 @@ class TPCHDataGenerator(_TPCDataGenerator):
         Generates TPC-H data in Parquet format based on the input scale factor and writes it to the target folder.
     """
     GEN_UTIL = 'dbgen'
+    GEN_TYPE = 'tpch'
