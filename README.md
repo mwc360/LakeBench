@@ -67,6 +67,7 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 |-----------------|:--------:|:------:|:-------:|:----------:|
 | Spark (Generic) |    ✅    |   ✅   |   ✅  |    ✅    |
 | Fabric Spark    |    ✅    |   ✅   |   ✅  |    ✅    |
+| Synapse Spark   |    ✅    |   ✅   |   ✅  |    ✅    |
 | HDInsight Spark |    ✅    |   ✅   |   ✅  |    ✅    |
 | DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
 | Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
@@ -99,7 +100,7 @@ Multiple modalities doesn't end at just benchmarks and engines, LakeBench also s
 _* ⚠️ denotes experimental storage backends_
 
 ## What Table Formats Are Supported?
-LakeBench currently only supports Delta Lake
+LakeBench currently only supports Delta Lake.
 
 ## 🔌 Extensibility by Design
 
