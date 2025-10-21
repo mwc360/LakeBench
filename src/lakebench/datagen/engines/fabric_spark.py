@@ -4,15 +4,9 @@ from decimal import Decimal
 import re
 from urllib.parse import urlparse, parse_qs
 
-try:
-    from IPython.core.getipython import get_ipython
-    utils = get_ipython().user_ns["mssparkutils"]
-except Exception as e:
-    e
-
 class FabricSpark(Spark):
     """
-    Spark Engine for ELT Benchmarks.
+    Fabric Spark Engine
     """
 
     def __init__(
@@ -24,14 +18,24 @@ class FabricSpark(Spark):
             compute_stats_all_cols: bool = False
             ):
         """
-        Initialize the SparkEngine with a Spark session.
+        Parameters
+        ----------
+        lakehouse_name : str
+            The name of the lakehouse (catalog) to use within Fabric.
+        lakehouse_schema_name : str
+            The name of the schema (database) to use within the catalog.
+        spark_measure_telemetry : bool, default False
+            Whether to enable sparkmeasure telemetry for performance measurement.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the Spark cluster. If None, cost calculations are auto calculated
+            where possible.
+        compute_stats_all_cols : bool, default False
+            Whether to stats should be computed automatically as part of write operations.
         """
-        self.lakehouse_name = lakehouse_name
-        self.lakehouse_schema_name = lakehouse_schema_name
 
         super().__init__(
-            catalog_name=self.lakehouse_name, 
-            schema_name=self.lakehouse_schema_name, 
+            catalog_name=lakehouse_name, 
+            schema_name=lakehouse_schema_name, 
             spark_measure_telemetry=spark_measure_telemetry, 
             cost_per_vcore_hour=cost_per_vcore_hour,
             compute_stats_all_cols=compute_stats_all_cols
@@ -67,6 +71,7 @@ class FabricSpark(Spark):
             'spark.synapse.vegas.cacheSize',
             'spark.native.enabled',
             'spark.gluten.enabled',
+            'spark.sql.parquet.native.writer.directWriteEnabled',
             'spark.synapse.vhd.name',
             'spark.synapse.vhd.id',
             'spark.microsoft.delta.stats.collect.extended',
@@ -74,7 +79,6 @@ class FabricSpark(Spark):
             'spark.microsoft.delta.snapshot.driverMode.enabled',
             'spark.microsoft.delta.stats.collect.extended.property.setAtTableCreation',
             'spark.microsoft.delta.targetFileSize.adaptive.enabled',
-            'spark.sql.parquet.compression.codec',
             'spark.app.id',
             'spark.cluster.name'
         ]}

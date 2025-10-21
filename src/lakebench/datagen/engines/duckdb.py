@@ -8,7 +8,7 @@ from importlib.metadata import version
 
 class DuckDB(BaseEngine):
     """
-    DuckDB Engine for ELT Benchmarks.
+    DuckDB Engine
     """
     SQLGLOT_DIALECT = "duckdb"
     SUPPORTS_ONELAKE = True
@@ -22,8 +22,19 @@ class DuckDB(BaseEngine):
             storage_options: Optional[dict[str, Any]] = None
             ):
         """
-        Initialize the DuckDB Engine Configs
+        Parameters
+        ----------
+        schema_or_working_directory_uri : str
+            The base URI where tables are stored. This could be an arbitrary directory or
+            schema path within a metastore.
+        cost_per_vcore_hour : float, optional
+            The cost per vCore hour for the compute runtime. If None, cost calculations are auto calculated
+            where possible.
+        storage_options : dict, optional
+            A dictionary of storage options to pass to the engine for filesystem access. Optional as LakeBench
+            will attempt to read from environment variables depeneding on the compute runtime.
         """
+        
         super().__init__(schema_or_working_directory_uri, storage_options)
         import duckdb
         self.duckdb = duckdb.connect()
@@ -34,7 +45,7 @@ class DuckDB(BaseEngine):
             self.duckdb.sql(f""" CREATE OR REPLACE SECRET onelake ( TYPE AZURE, PROVIDER ACCESS_TOKEN, ACCESS_TOKEN '{os.getenv("AZURE_STORAGE_TOKEN")}') ;""")
 
         self.version: str = f"{version('duckdb')} (deltalake=={version('deltalake')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_autocalc_usd_cost_per_vcore_hour', None)
     
     def _create_empty_table(self, table_name: str, ddl: str):
         if not ddl.strip().startswith("CREATE OR REPLACE TABLE"):

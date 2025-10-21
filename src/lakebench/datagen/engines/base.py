@@ -15,7 +15,8 @@ class BaseEngine(ABC):
     SQLGLOT_DIALECT : str, optional
         Specifies the SQL dialect to be used by the engine when SQL transpiling
         is required. Default is None.
-
+    SUPPORTS_ONELAKE : bool
+        Indicates if the engine supports OneLake URIs (e.g., abfss://workspace@onelake.dfs.fabric.microsoft.com/...)
     SUPPORTS_SCHEMA_PREP : bool
         Indicates if the engine supports schema preparation (creation of empty table with defined schema)
     SUPPORTS_MOUNT_PATH : bool
@@ -47,7 +48,7 @@ class BaseEngine(ABC):
             The base URI where tables are stored. For non-Spark engines, 
             tables are stored directly under this path. For Spark engines, 
             this serves as the root schema path where tables are created.
-        storeage_options : dict, optional
+        storage_options : dict, optional
             A dictionary of storage options to pass to the engine for filesystem access.
         """
         self.version: str = ''
@@ -69,7 +70,7 @@ class BaseEngine(ABC):
             workspace_id = self._notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
             self.capacity_id = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityId']
-            self._FABRIC_USD_COST_PER_VCORE_HOUR = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
+            self._autocalc_usd_cost_per_vcore_hour = self._get_vm_retail_rate(self.region, 'Spark Memory Optimized Capacity Usage')
             self.extended_engine_metadata.update({'compute_region': self.region})
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
             os.environ["AZURE_STORAGE_TOKEN"] = self._notebookutils.credentials.getToken("storage")
