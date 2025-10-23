@@ -73,7 +73,7 @@ class ELTBench(BaseBenchmark):
             run_id: Optional[str] = None
             ):
         self.scale_factor = scale_factor
-        super().__init__(engine, scenario_name, result_table_uri, save_results, run_id=run_id)
+        super().__init__(engine, scenario_name, input_parquet_folder_uri, result_table_uri, save_results, run_id)
         for base_engine, benchmark_impl in self.BENCHMARK_IMPL_REGISTRY.items():
             if isinstance(engine, base_engine):
                 self.benchmark_impl_class = benchmark_impl
