@@ -62,7 +62,7 @@ class _LoadAndQuery(BaseBenchmark):
             run_id: Optional[str] = None
             ):
         self.scale_factor = scale_factor
-        super().__init__(engine, scenario_name, result_table_uri, save_results, run_id=run_id)
+        super().__init__(engine, scenario_name, input_parquet_folder_uri, result_table_uri, save_results, run_id)
         if query_list is not None:
             expanded_query_list = []
             for query in query_list:
