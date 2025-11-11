@@ -42,7 +42,7 @@ class FabricSpark(Spark):
         )
 
         self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
-        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_FABRIC_USD_COST_PER_VCORE_HOUR', None)
+        self.cost_per_vcore_hour = cost_per_vcore_hour or getattr(self, '_autocalc_usd_cost_per_vcore_hour', None)
         self.cost_per_hour = self.get_total_cores() * self.cost_per_vcore_hour
 
         url = self.spark.sparkContext.uiWebUrl
