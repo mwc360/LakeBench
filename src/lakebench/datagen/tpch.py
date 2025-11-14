@@ -1,8 +1,9 @@
 from ._tpc_rs import _TPCRsDataGenerator
 class TPCHDataGenerator(_TPCRsDataGenerator):
     """
-    This class is a wrapper of the rust-based TPC-H data generator, `tpchgen-rs`. It generates TPC-H data in Parquet format
-    based on the specified scale factor and target row group size in MB.
+    This class is a multithreading wrapper of the rust-based TPC-H data generator, `tpchgen-rs`. It generates TPC-H data in Parquet format
+    based on the specified scale factor, target row group size in MB, and compression codec. Each table is partitioned into multiple parts to
+    target generating 1GB sized files.
 
     Attributes
     ----------
@@ -12,6 +13,9 @@ class TPCHDataGenerator(_TPCRsDataGenerator):
         The folder path where the generated Parquet data will be stored. A folder for each table will be created.
     target_row_group_size_mb : int
         The target size of row groups in megabytes for the generated Parquet files.
+    compression: str, default="ZSTD"
+        Compression codec to use for the generated parquet files.
+        Supports codecs: "UNCOMPRESSED", "SNAPPY", "GZIP(compression_level)", "BROTLI(compression_level)", "LZ4", "LZ4_RAW", "LZO", "ZSTD(compression_level)"
 
     Methods
     -------
@@ -20,3 +24,14 @@ class TPCHDataGenerator(_TPCRsDataGenerator):
     """
     GEN_UTIL = 'dbgen'
     GEN_TYPE = 'tpch'
+    GEN_SF1000_FILE_COUNT_MAP = {
+        'lineitem': 150,
+        'orders': 40,
+        'partsupp': 26,
+        'part': 4,
+        'customer': 8
+    }
+    GEN_TABLE_REGISTRY = [
+        'customer', 'lineitem', 'nation', 'orders', 'part',
+        'partsupp', 'region', 'supplier'
+    ]
