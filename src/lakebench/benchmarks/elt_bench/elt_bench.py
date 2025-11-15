@@ -1,5 +1,6 @@
 from typing import Optional
 from ..base import BaseBenchmark
+from ...utils.query_utils import transpile_and_qualify_query, get_table_name_from_ddl
 
 from .engine_impl.spark import SparkELTBench
 from .engine_impl.duckdb import DuckDBELTBench
@@ -14,6 +15,8 @@ from ...engines.daft import Daft
 from ...engines.polars import Polars
 from ...engines.sail import Sail
 
+from ..tpcds.tpcds import TPCDS
+import importlib.resources
 import posixpath
 
 
@@ -115,6 +118,60 @@ class ELTBench(BaseBenchmark):
             raise NotImplementedError("Full mode is not implemented yet.")
         else:
             raise ValueError(f"Mode '{mode}' is not supported. Supported modes: {self.MODE_REGISTRY}.")
+        
+    def _prepare_schema(self, tables: list[str]):
+        
+
+        self.engine.create_schema_if_not_exists(drop_before_create=True)
+
+        engine_class_name = self.engine.__class__.__name__.lower()
+        parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
+        benchmark_name = 'tpcds'
+        engine_root_lib_name = self.engine.__class__.__module__.split('.')[0]
+        from_dialect = self.engine.SQLGLOT_DIALECT
+        self.DDL_FILE_NAME = TPCDS.DDL_FILE_NAME
+
+        try:
+            # Try to load engine-specific query first
+            with importlib.resources.path(
+                f"{engine_root_lib_name}.benchmarks.{benchmark_name}.resources.ddl.{engine_class_name}", 
+                self.DDL_FILE_NAME
+            ) as ddl_path:
+                with open(ddl_path, 'r') as ddl_file:
+                    ddl = ddl_file.read()                
+        except (ModuleNotFoundError, FileNotFoundError):
+            # Try parent engine class name if engine-specific fails
+            try:
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.{parent_class_name}", 
+                    self.DDL_FILE_NAME
+                ) as ddl_path:
+                    with open(ddl_path, 'r') as ddl_file:
+                        ddl = ddl_file.read()
+            except (ModuleNotFoundError, FileNotFoundError):
+                # Fall back to canonical query
+                with importlib.resources.path(
+                    f"lakebench.benchmarks.{benchmark_name}.resources.ddl.canonical", 
+                    self.DDL_FILE_NAME
+                ) as ddl_path:
+                    with open(ddl_path, 'r') as ddl_file:
+                        ddl = ddl_file.read()
+                from_dialect = 'spark'
+            
+        statements = [s for s in ddl.split(';') if len(s) > 7]
+        for statement in statements:
+            prepped_ddl = transpile_and_qualify_query(
+                query=statement, 
+                from_dialect=from_dialect, 
+                to_dialect=self.engine.SQLGLOT_DIALECT, 
+                catalog=getattr(self.engine, 'catalog_name', None),
+                schema=getattr(self.engine, 'schema_name', None)
+            )
+            table_name = get_table_name_from_ddl(prepped_ddl)
+            # only create tables that are in the specified list
+            if table_name in tables:
+                self.engine._create_empty_table(table_name=table_name, ddl=prepped_ddl)
+            
 
     def run_light_mode(self):
         """
@@ -128,15 +185,20 @@ class ELTBench(BaseBenchmark):
         ----------
         None
         """
+        tables = [
+            'store_sales', 'date_dim', 'store', 'item', 'customer'
+        ]
+
         self.mode = 'light'
-        self.engine.create_schema_if_not_exists(drop_before_create=True)
-        
-        for table_name in ('store_sales', 'date_dim', 'store', 'item', 'customer'):
+        if self.engine.SUPPORTS_SCHEMA_PREP:
+            self._prepare_schema(tables=tables)
+
+        for table_name in tables:
             with self.timer(phase="Read parquet, write delta (x5)", test_item=table_name, engine=self.engine) as tc:
                 tc.execution_telemetry = self.engine.load_parquet_to_delta(
                     parquet_folder_uri=posixpath.join(self.input_parquet_folder_uri, f"{table_name}/"), 
                     table_name=table_name,
-                    table_is_precreated=False,
+                    table_is_precreated=True,
                     context_decorator=tc.context_decorator
                 )
         with self.timer(phase="Create fact table", test_item='total_sales_fact', engine=self.engine):
