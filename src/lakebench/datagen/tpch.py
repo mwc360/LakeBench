@@ -35,3 +35,13 @@ class TPCHDataGenerator(_TPCRsDataGenerator):
         'customer', 'lineitem', 'nation', 'orders', 'part',
         'partsupp', 'region', 'supplier'
     ]
+    SF1000_SIZE_GB_DICT = {
+        'lineitem':  152,
+        'orders': 38,
+        'partsupp': 26.7,
+        'part': 4,
+        'customer': 7.6,
+        'supplier': 0.48,
+        'region': 0.00,
+        'nation': 0.00
+    }

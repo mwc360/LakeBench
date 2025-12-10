@@ -23,11 +23,21 @@ class _TPCRsDataGenerator:
     GEN_TABLE_REGISTRY = [
         'table1', 'table2'
     ]
+    TARGET_FILE_SIZE_MAP = [
+        (10, 128), # up to 10GB -> 128MB files
+        (1024, 256), # up to 1TB -> 256MB files
+        (5120, 512), # up to 5TB -> 512MB files
+        (10240, 1024) # up to 10TB and larger -> 1GB files
+    ]
+    SF1000_SIZE_GB_DICT = {
+        'table1':  100,
+        'table2': 12
+    }
     
     # Class-level lock for thread-safe printing
     _print_lock = threading.Lock()
 
-    def __init__(self, scale_factor: int, target_folder_uri: str, target_row_group_size_mb: int = 128, compression: str = "ZSTD(3)") -> None:
+    def __init__(self, scale_factor: int, target_folder_uri: str, target_row_group_size_mb: int = 128, compression: str = "ZSTD(1)") -> None:
         """
         Initialize the TPC data generator with a scale factor.
 
@@ -39,7 +49,7 @@ class _TPCRsDataGenerator:
             Test data will be written to this location where tables are represented as folders containing parquet files.
         target_row_group_size_mb: int, default=128
             Desired row group size for the generated parquet files.
-        compression: str, default="ZSTD"
+        compression: str, default="ZSTD(1)"
             Compression codec to use for the generated parquet files.
             Supports codecs: "UNCOMPRESSED", "SNAPPY", "GZIP(compression_level)", "BROTLI(compression_level)", "LZ4", "LZ4_RAW", "LZO", "ZSTD(compression_level)"
         """
@@ -57,7 +67,7 @@ class _TPCRsDataGenerator:
         
         self.fs: AbstractFileSystem = fsspec.filesystem("file")
         self.target_folder_uri = to_unix_path(target_folder_uri)
-        self.target_row_group_size_mb = target_row_group_size_mb
+        self.target_row_group_size_mb = int(target_row_group_size_mb * 2.6) # 2.6 for uncompressed-> ZSTD(1) compression ratio
         self.compression = compression
 
         def get_tpcgen_path():
@@ -146,26 +156,34 @@ class _TPCRsDataGenerator:
         bool
             True if generation was successful, False otherwise
         """
+        def find_target_size(size: float) -> int:
+            for threshold_gb, target_mb in self.TARGET_FILE_SIZE_MAP:
+                if size < threshold_gb:
+                    return target_mb
+            return 1024
+
+        # Scale the parts based on the scale factor and size of the table
+        sf1000_size_gb = self.SF1000_SIZE_GB_DICT.get(table_name, 0)
+        scale_adj_size_gb = sf1000_size_gb * (self.scale_factor / 1000.0)
+        target_size_mb = find_target_size(scale_adj_size_gb)
+        optimal_parts = max(round(scale_adj_size_gb * 1024 / target_size_mb), 1)
+                
+        print(f"🔧 {table_name} - Using {optimal_parts} parts (target file size: {target_size_mb}mb)")
         
-        # Calculate optimal parts for this table based on scale factor
-        sf1000_parts = self.GEN_SF1000_FILE_COUNT_MAP.get(table_name)
-        
-        # Scale the parts based on the scale factor
-        optimal_parts = max(1, math.ceil(sf1000_parts * (self.scale_factor / 1000.0))) if sf1000_parts is not None else 1
-        
-        print(f"🔧 {table_name} - Using {optimal_parts} parts")
-        
+        # ensure that 128mb target files have a single row group
+        adj_row_group_target_mb = 1024 if target_size_mb == 128 else self.target_row_group_size_mb
+        # Build command for individual table generation
         cmd = [
             self.tpcgen_exe,
             "--scale-factor", str(self.scale_factor),
             "--output-dir", self.target_folder_uri,
             "--parts", str(optimal_parts),
             "--format", "parquet",
-            "--parquet-row-group-bytes", str(self.target_row_group_size_mb * 1024 * 1024),
+            "--parquet-row-group-bytes", str(adj_row_group_target_mb * 1024 * 1024),
             "--parquet-compression", self.compression,
             "--tables", table_name 
         ]
-        
+
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             if result.stdout:
