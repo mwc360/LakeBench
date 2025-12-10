@@ -107,7 +107,7 @@ class BaseEngine(ABC):
 
         # Check for Microsoft Fabric or Synapse
         try:
-            notebookutils = get_ipython().user_ns.get("notebookutils")
+            notebookutils = get_ipython().user_ns.get("notebookutils")  # noqa: F821
             if notebookutils and hasattr(notebookutils, 'runtime'):
                 if hasattr(notebookutils.runtime, 'context'):
                     context = notebookutils.runtime.context
@@ -122,7 +122,7 @@ class BaseEngine(ABC):
             if 'DATABRICKS_RUNTIME_VERSION' in os.environ:
                 return "databricks"
             try:
-                dbutils = get_ipython().user_ns.get("dbutils")
+                dbutils = get_ipython().user_ns.get("dbutils")  # noqa: F821
                 if dbutils:
                     return "databricks"
             except:
@@ -199,6 +199,14 @@ class BaseEngine(ABC):
 
         job_cost = Decimal(self.cost_per_hour) * (Decimal(duration_ms) / Decimal(3600000))  # Convert ms to hours
         return job_cost.quantize(Decimal('0.0000000000'))  # Ensure precision matches DECIMAL(18,10)
+    
+    
+    def create_external_location(self, location_uri: str):
+        """
+        Supports engines that need to create external locations for data access.
+        By default, this is a no-op and is only overridden by subclasses as needed.
+        """
+        pass
     
     def create_schema_if_not_exists(self, drop_before_create: bool = True):
         if drop_before_create:

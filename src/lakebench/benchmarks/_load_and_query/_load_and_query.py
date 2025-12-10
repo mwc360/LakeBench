@@ -139,6 +139,7 @@ class _LoadAndQuery(BaseBenchmark):
         - The DDL file is expected to be located in the `resources.ddl` directory corresponding to the TPC benchmark variant.
         """
         self.engine.create_schema_if_not_exists(drop_before_create=True)
+        self.engine.create_external_location(self.input_parquet_folder_uri)
 
         engine_class_name = self.engine.__class__.__name__.lower()
         parent_class_name = self.engine.__class__.__bases__[0].__name__.lower()
