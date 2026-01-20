@@ -107,7 +107,13 @@ class BaseEngine(ABC):
 
         # Check for Microsoft Fabric or Synapse
         try:
-            notebookutils = get_ipython().user_ns.get("notebookutils")  # noqa: F821
+            notebookutils = None
+            utils_modules = ('notebookutils', 'mssparkutils')
+            for utils_module in utils_modules:
+                try:
+                    notebookutils = __import__(utils_module)
+                except ImportError:
+                    continue
             if notebookutils and hasattr(notebookutils, 'runtime'):
                 if hasattr(notebookutils.runtime, 'context'):
                     context = notebookutils.runtime.context
@@ -119,11 +125,12 @@ class BaseEngine(ABC):
         
         # Check for Databricks
         try:
+            dbutils = None
             if 'DATABRICKS_RUNTIME_VERSION' in os.environ:
                 return "databricks"
             try:
-                dbutils = get_ipython().user_ns.get("dbutils")  # noqa: F821
-                if dbutils:
+                dbutils = __import__('dbutils')
+                if dbutils is not None:
                     return "databricks"
             except:
                 pass
