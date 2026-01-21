@@ -62,10 +62,10 @@ class BaseEngine(ABC):
         self.operating_system = self._detect_os() if getattr(self, 'operating_system', None) is None else self.operating_system
 
         if self.runtime == "fabric":
-            from IPython.core.getipython import get_ipython
+            import notebookutils
             import sempy.fabric as fabric
 
-            self._notebookutils = get_ipython().user_ns.get("notebookutils")
+            self._notebookutils = notebookutils
             self._fabric_rest = fabric.FabricRestClient()
             workspace_id = self._notebookutils.runtime.context['currentWorkspaceId']
             self.region = self._fabric_rest.get(path_or_url=f"/v1/workspaces/{workspace_id}").json()['capacityRegion'].replace(' ', '').lower()
@@ -74,6 +74,9 @@ class BaseEngine(ABC):
             self.extended_engine_metadata.update({'compute_region': self.region})
             # rust object store (used by delta-rs, polars, sail) parametrization; https://docs.rs/object_store/latest/object_store/azure/enum.AzureConfigKey.html#variant.Token
             os.environ["AZURE_STORAGE_TOKEN"] = self._notebookutils.credentials.getToken("storage")
+        elif self.runtime == "synapse":
+            import mssparkutils
+            self._notebookutils = mssparkutils
 
         self.extended_engine_metadata.update({
             'runtime': self.runtime,
