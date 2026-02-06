@@ -60,6 +60,9 @@ dmypy.json
 # Benchmark outputs (optional)
 results/
 benchmark_outputs/
+local_data/
+local_working_dir/
+local_results/
 
 # Local dev tools
 *.sqlite3
