@@ -21,7 +21,8 @@
           ];
 
           shellHook = ''
-            if [ ! -d .venv ]; then
+            update-venv() {
+              rm -rf .venv
               uv venv --python ${python}/bin/python .venv
               source .venv/bin/activate
 
@@ -32,6 +33,10 @@
               uv pip install pytest jupyter ipykernel
 
               python -m ipykernel install --user --name python3 --display-name "Python 3 (LakeBench)"
+            }
+
+            if [ ! -d .venv ]; then
+              update-venv
             else
               source .venv/bin/activate
             fi
