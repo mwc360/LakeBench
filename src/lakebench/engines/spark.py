@@ -263,8 +263,8 @@ class Spark(BaseEngine):
         vm_host_count = len(set(executor.host() for executor in self.spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
         worker_count = vm_host_count - 1
         worker_cores = os.cpu_count()
-        as_min_workers = sc_conf_dict['spark.dynamicAllocation.initialExecutors'] if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
-        as_max_workers = sc_conf_dict['spark.dynamicAllocation.maxExecutors'] if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
+        as_min_workers = sc_conf_dict.get('spark.dynamicAllocation.initialExecutors') if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
+        as_max_workers = sc_conf_dict.get('spark.dynamicAllocation.maxExecutors') if sc_conf_dict.get('spark.autoscale.executorResourceInfoTag.enabled', 'false') == 'true' else None
         as_enabled = True if as_min_workers != as_max_workers and sc_conf_dict.get('spark.dynamicAllocation.minExecutors', None) != sc_conf_dict.get('spark.dynamicAllocation.maxExecutors', None) else False
         type = "SingleNode" if vm_host_count == 1 and not as_enabled else 'MultiNode'
         workers_word = 'Workers' if worker_count > 1 or (as_max_workers is not None and int(as_max_workers) > 1)  else 'Worker'
