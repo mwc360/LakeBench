@@ -37,7 +37,7 @@ class SynapseSpark(Spark):
             compute_stats_all_cols=False
             )        
 
-        if not self.runtime != 'synapse':
+        if self.runtime != 'synapse':
             raise RuntimeError("This engine is only supports Synapse Spark Pools.")
         self.version: str = f"{self.spark.sparkContext.version} (vhd_name=={self.spark.conf.get('spark.synapse.vhd.name')})"
         region = self.spark.conf.get('spark.cluster.region')
