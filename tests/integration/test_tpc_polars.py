@@ -1,8 +1,6 @@
 """
 Integration tests: all benchmarks with the Polars engine.
 
-ClickBench is skipped — Polars is not in ClickBench.BENCHMARK_IMPL_REGISTRY.
-
 Run with:
     uv sync --group dev --extra polars --extra tpcds_datagen --extra tpch_datagen
     uv run pytest tests/integration/test_tpc_polars.py -v -s
@@ -31,6 +29,13 @@ def test_tpcds_polars(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import TPCDS
     results, exc = run_benchmark(_engine(tmp_path, "tpcds"), TPCDS, tpcds_parquet_dir, "power_test", scale_factor=0.1)
     report_and_assert(results, "TPC-DS", "Polars", exc)
+
+
+@pytest.mark.integration
+def test_clickbench_polars(clickbench_parquet_dir, tmp_path):
+    from lakebench.benchmarks import ClickBench
+    results, exc = run_benchmark(_engine(tmp_path, "clickbench"), ClickBench, clickbench_parquet_dir, "power_test")
+    report_and_assert(results, "ClickBench", "Polars", exc)
 
 
 @pytest.mark.integration

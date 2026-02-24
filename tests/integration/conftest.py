@@ -25,17 +25,34 @@ pytest.importorskip("pyarrow", reason="requires lakebench[tpcds_datagen] extra")
 # Shared reporting helper
 # ---------------------------------------------------------------------------
 
-def report_and_assert(results, benchmark_name: str, engine_label: str, run_exception=None):
+def report_and_assert(results, benchmark_name: str, engine_label: str,
+                      run_exception=None, min_pass_rate: float = 0.0):
     """Print a run summary, emit warnings on partial failures, and assert
-    that at least one step succeeded.
+    pass rate meets *min_pass_rate*.
 
-    Works for both load-and-query benchmarks (TPC-H, TPC-DS, ClickBench) whose
-    results use ``phase in ("Load", "Query")``, and task-based benchmarks
-    (ELTBench) that use custom phase names.  In all cases the contract is:
-    warn on any failure, fail only when *everything* failed or nothing ran.
+    min_pass_rate=0.0 (default) — at least one step must succeed (⚠️ engines).
+    min_pass_rate=1.0           — every step must succeed        (✅ engines).
+
+    Works for both load-and-query benchmarks (TPC-H, TPC-DS, ClickBench) and
+    task-based benchmarks (ELTBench).
     """
     load_results  = [r for r in results if r["phase"] == "Load"]
     query_results = [r for r in results if r["phase"] == "Query"]
+
+    def _assert_rate(passed, total, unit):
+        if total == 0:
+            return
+        rate = len(passed) / total
+        if min_pass_rate > 0.0:
+            assert rate >= min_pass_rate, (
+                f"{benchmark_name} [{engine_label}]: pass rate "
+                f"{rate:.1%} ({len(passed)}/{total} {unit}) "
+                f"is below required {min_pass_rate:.0%}."
+            )
+        else:
+            assert len(passed) > 0, (
+                f"{benchmark_name} [{engine_label}]: ALL {total} {unit} failed."
+            )
 
     # ELTBench: no Load/Query phases — treat every result as a "task"
     if not load_results and not query_results:
@@ -67,9 +84,7 @@ def report_and_assert(results, benchmark_name: str, engine_label: str, run_excep
                 f"tasks failed: {[r['test_item'] for r in failed]}",
                 UserWarning, stacklevel=2,
             )
-        assert len(passed) > 0, (
-            f"{benchmark_name} [{engine_label}]: ALL {len(task_results)} tasks failed."
-        )
+        _assert_rate(passed, len(task_results), "tasks")
         return
 
     # Load-and-query benchmarks (TPC-H, TPC-DS, ClickBench)
@@ -109,9 +124,7 @@ def report_and_assert(results, benchmark_name: str, engine_label: str, run_excep
             f"queries failed: {[r['test_item'] for r in failed]}",
             UserWarning, stacklevel=2,
         )
-    assert len(passed) > 0, (
-        f"{benchmark_name} [{engine_label}]: ALL {len(query_results)} queries failed."
-    )
+    _assert_rate(passed, len(query_results), "queries")
 
 
 # ---------------------------------------------------------------------------

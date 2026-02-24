@@ -21,25 +21,25 @@ def _engine(tmp_path, name):
 def test_tpch_duckdb(tpch_parquet_dir, tmp_path):
     from lakebench.benchmarks import TPCH
     results, exc = run_benchmark(_engine(tmp_path, "tpch"), TPCH, tpch_parquet_dir, "power_test", scale_factor=0.1)
-    report_and_assert(results, "TPC-H", "DuckDB", exc)
+    report_and_assert(results, "TPC-H", "DuckDB", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
 def test_tpcds_duckdb(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import TPCDS
     results, exc = run_benchmark(_engine(tmp_path, "tpcds"), TPCDS, tpcds_parquet_dir, "power_test", scale_factor=0.1)
-    report_and_assert(results, "TPC-DS", "DuckDB", exc)
+    report_and_assert(results, "TPC-DS", "DuckDB", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
 def test_clickbench_duckdb(clickbench_parquet_dir, tmp_path):
     from lakebench.benchmarks import ClickBench
     results, exc = run_benchmark(_engine(tmp_path, "clickbench"), ClickBench, clickbench_parquet_dir, "power_test")
-    report_and_assert(results, "ClickBench", "DuckDB", exc)
+    report_and_assert(results, "ClickBench", "DuckDB", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
 def test_eltbench_duckdb(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import ELTBench
     results, exc = run_benchmark(_engine(tmp_path, "eltbench"), ELTBench, tpcds_parquet_dir, "light", scale_factor=0.1)
-    report_and_assert(results, "ELTBench", "DuckDB", exc)
+    report_and_assert(results, "ELTBench", "DuckDB", exc, min_pass_rate=1.0)

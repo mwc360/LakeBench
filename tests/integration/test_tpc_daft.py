@@ -1,8 +1,6 @@
 """
 Integration tests: all benchmarks with the Daft engine.
 
-ClickBench is skipped — Daft is not in ClickBench.BENCHMARK_IMPL_REGISTRY.
-
 Run with:
     uv sync --group dev --extra daft --extra tpcds_datagen --extra tpch_datagen
     uv run pytest tests/integration/test_tpc_daft.py -v -s
@@ -34,8 +32,15 @@ def test_tpcds_daft(tpcds_parquet_dir, tmp_path):
 
 
 @pytest.mark.integration
+def test_clickbench_daft(clickbench_parquet_dir, tmp_path):
+    from lakebench.benchmarks import ClickBench
+    results, exc = run_benchmark(_engine(tmp_path, "clickbench"), ClickBench, clickbench_parquet_dir, "power_test")
+    report_and_assert(results, "ClickBench", "Daft", exc)
+
+
+@pytest.mark.integration
 def test_eltbench_daft(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import ELTBench
     results, exc = run_benchmark(_engine(tmp_path, "eltbench"), ELTBench, tpcds_parquet_dir, "light", scale_factor=0.1)
-    report_and_assert(results, "ELTBench", "Daft", exc)
+    report_and_assert(results, "ELTBench", "Daft", exc, min_pass_rate=1.0)
 

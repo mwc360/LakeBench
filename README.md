@@ -70,8 +70,8 @@ LakeBench supports multiple lakehouse compute engines. Each benchmark scenario d
 | Synapse Spark   |    ✅    |   ✅   |   ✅  |    ✅    |
 | HDInsight Spark |    ✅    |   ✅   |   ✅  |    ✅    |
 | DuckDB          |    ✅    |   ✅   |   ✅  |    ✅    |
-| Polars          |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
-| Daft            |    ✅    |   ⚠️   |   ⚠️  |    🔜    |
+| Polars          |    ✅    |   ⚠️   |   ⚠️  |    ⚠️    |
+| Daft            |    ✅    |   ⚠️   |   ⚠️  |    ⚠️    |
 | Sail            |    ✅    |   ✅   |   ✅  |    ✅    |
 
 > **Legend:**  

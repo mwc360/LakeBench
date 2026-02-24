@@ -37,6 +37,10 @@ build/
 .DS_Store
 Thumbs.db
 
+# Spark metastore (Derby embedded DB)
+metastore_db/
+derby.log
+
 # Logs
 *.log
 
