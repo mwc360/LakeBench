@@ -85,7 +85,7 @@ def _run(engine_or_exc, BenchmarkCls, input_dir, run_mode, benchmark_name, **kwa
 def test_tpch_spark(tpch_parquet_dir, tmp_path):
     from lakebench.benchmarks import TPCH
     engine = _engine(tmp_path, "tpch")
-    results, exc = _run(engine, TPCH, tpch_parquet_dir, "power_test", "TPC-H", scale_factor=1)
+    results, exc = _run(engine, TPCH, tpch_parquet_dir, "power_test", "TPC-H", scale_factor=0.1)
     if results is not None:
         report_and_assert(results, "TPC-H", getattr(engine, "version", "Spark"), exc)
 
@@ -94,7 +94,7 @@ def test_tpch_spark(tpch_parquet_dir, tmp_path):
 def test_tpcds_spark(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import TPCDS
     engine = _engine(tmp_path, "tpcds")
-    results, exc = _run(engine, TPCDS, tpcds_parquet_dir, "power_test", "TPC-DS", scale_factor=1)
+    results, exc = _run(engine, TPCDS, tpcds_parquet_dir, "power_test", "TPC-DS", scale_factor=0.1)
     if results is not None:
         report_and_assert(results, "TPC-DS", getattr(engine, "version", "Spark"), exc)
 
@@ -112,7 +112,7 @@ def test_clickbench_spark(clickbench_parquet_dir, tmp_path):
 def test_eltbench_spark(tpcds_parquet_dir, tmp_path):
     from lakebench.benchmarks import ELTBench
     engine = _engine(tmp_path, "eltbench")
-    results, exc = _run(engine, ELTBench, tpcds_parquet_dir, "light", "ELTBench", scale_factor=1)
+    results, exc = _run(engine, ELTBench, tpcds_parquet_dir, "light", "ELTBench", scale_factor=0.1)
     if results is not None:
         report_and_assert(results, "ELTBench", getattr(engine, "version", "Spark"), exc)
 

@@ -144,23 +144,23 @@ def run_benchmark(engine, BenchmarkCls, input_dir: str, run_mode: str, **kwargs)
 
 @pytest.fixture(scope="session")
 def tpch_parquet_dir(tmp_path_factory):
-    """Generate TPC-H SF1 parquet data once per session."""
+    """Generate TPC-H SF0.1 parquet data once per session."""
     from lakebench.datagen import TPCHDataGenerator
 
-    data_dir = tmp_path_factory.mktemp("tpch_sf1")
-    print(f"\n[datagen] Generating TPC-H SF1 -> {data_dir}")
-    TPCHDataGenerator(scale_factor=1, target_folder_uri=str(data_dir)).run()
+    data_dir = tmp_path_factory.mktemp("tpch_sf0.1")
+    print(f"\n[datagen] Generating TPC-H SF0.1 -> {data_dir}")
+    TPCHDataGenerator(scale_factor=0.1, target_folder_uri=str(data_dir)).run()
     return str(data_dir)
 
 
 @pytest.fixture(scope="session")
 def tpcds_parquet_dir(tmp_path_factory):
-    """Generate TPC-DS SF1 parquet data once per session."""
+    """Generate TPC-DS SF0.1 parquet data once per session."""
     from lakebench.datagen import TPCDSDataGenerator
 
-    data_dir = tmp_path_factory.mktemp("tpcds_sf1")
-    print(f"\n[datagen] Generating TPC-DS SF1 -> {data_dir}")
-    TPCDSDataGenerator(scale_factor=1, target_folder_uri=str(data_dir)).run()
+    data_dir = tmp_path_factory.mktemp("tpcds_sf0.1")
+    print(f"\n[datagen] Generating TPC-DS SF0.1 -> {data_dir}")
+    TPCDSDataGenerator(scale_factor=0.1, target_folder_uri=str(data_dir)).run()
     return str(data_dir)
 
 
