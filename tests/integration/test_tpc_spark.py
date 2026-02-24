@@ -87,7 +87,7 @@ def test_tpch_spark(tpch_parquet_dir, tmp_path):
     engine = _engine(tmp_path, "tpch")
     results, exc = _run(engine, TPCH, tpch_parquet_dir, "power_test", "TPC-H", scale_factor=0.1)
     if results is not None:
-        report_and_assert(results, "TPC-H", getattr(engine, "version", "Spark"), exc, min_pass_rate=1.0)
+        report_and_assert(results, "TPC-H", "Spark", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
@@ -96,7 +96,7 @@ def test_tpcds_spark(tpcds_parquet_dir, tmp_path):
     engine = _engine(tmp_path, "tpcds")
     results, exc = _run(engine, TPCDS, tpcds_parquet_dir, "power_test", "TPC-DS", scale_factor=0.1)
     if results is not None:
-        report_and_assert(results, "TPC-DS", getattr(engine, "version", "Spark"), exc, min_pass_rate=1.0)
+        report_and_assert(results, "TPC-DS", "Spark", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
@@ -105,7 +105,7 @@ def test_clickbench_spark(clickbench_parquet_dir, tmp_path):
     engine = _engine(tmp_path, "clickbench")
     results, exc = _run(engine, ClickBench, clickbench_parquet_dir, "power_test", "ClickBench")
     if results is not None:
-        report_and_assert(results, "ClickBench", getattr(engine, "version", "Spark"), exc, min_pass_rate=1.0)
+        report_and_assert(results, "ClickBench", "Spark", exc, min_pass_rate=1.0)
 
 
 @pytest.mark.integration
@@ -114,5 +114,5 @@ def test_eltbench_spark(tpcds_parquet_dir, tmp_path):
     engine = _engine(tmp_path, "eltbench")
     results, exc = _run(engine, ELTBench, tpcds_parquet_dir, "light", "ELTBench", scale_factor=0.1)
     if results is not None:
-        report_and_assert(results, "ELTBench", getattr(engine, "version", "Spark"), exc, min_pass_rate=1.0)
+        report_and_assert(results, "ELTBench", "Spark", exc, min_pass_rate=1.0)
 
