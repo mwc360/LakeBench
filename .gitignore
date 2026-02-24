@@ -5,6 +5,9 @@ __pycache__/
 *.pyd
 *.so
 
+# Development artifacts
+dev/
+
 # Virtual environment
 .venv/
 env/

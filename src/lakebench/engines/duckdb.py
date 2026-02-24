@@ -87,7 +87,7 @@ class DuckDB(BaseEngine):
         """
         Execute a SQL query using DuckDB.
         """
-        result = self.duckdb.sql(query).df()
+        result = self.duckdb.sql(query).arrow()
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(

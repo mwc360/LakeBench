@@ -26,3 +26,22 @@ def to_unix_path(path_str) -> str:
         result = '/' + result
         
     return result
+
+_REMOTE_SCHEMES = ("abfss://", "wasbs://", "az://", "s3://", "gs://", "file://")
+
+def to_file_uri(path: str) -> str:
+    """Convert a local filesystem path to a ``file:///`` URI.
+
+    Passes through paths that already start with a recognised remote scheme
+    (``abfss://``, ``s3://``, ``file://``, etc.) unchanged.  Useful when an
+    engine requires a proper URI rather than a bare Windows drive-letter path.
+
+    Examples::
+
+        to_file_uri(r"C:\\Users\\foo\\data")  # -> "file:///C:/Users/foo/data"
+        to_file_uri("abfss://container@acct/path")  # -> unchanged
+    """
+    if any(path.startswith(s) for s in _REMOTE_SCHEMES):
+        return path
+    import pathlib
+    return pathlib.Path(path).as_uri()
