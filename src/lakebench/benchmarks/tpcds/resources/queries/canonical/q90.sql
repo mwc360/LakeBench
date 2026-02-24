@@ -1,5 +1,5 @@
 SELECT
-  CAST(amc AS DECIMAL(15, 4)) / CAST(pmc AS DECIMAL(15, 4)) AS am_pm_ratio
+  CAST(amc AS DECIMAL(15, 4)) / CAST(NULLIF(pmc, 0) AS DECIMAL(15, 4)) AS am_pm_ratio --NULLIF to avoid divide by zero error on small scales 
 FROM (
   SELECT
     COUNT(*) AS amc

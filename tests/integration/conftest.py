@@ -16,7 +16,7 @@ run_benchmark(engine, BenchmarkCls, input_dir, run_mode, **kwargs)
 Report generation
 -----------------
 After a pytest session, per-engine markdown reports are written to
-docs/benchmarks/<engine>.md  whenever report_and_assert is called at least
+reports/coverage/<engine>.md  whenever report_and_assert is called at least
 once.  Run any integration test to refresh the reports.
 """
 import datetime
@@ -222,7 +222,7 @@ def clickbench_parquet_dir():
 # ---------------------------------------------------------------------------
 
 _BENCHMARK_ORDER = ["TPC-H", "TPC-DS", "ClickBench", "ELTBench"]
-_DOCS_DIR = pathlib.Path(__file__).parent.parent.parent / "docs" / "benchmarks"
+_DOCS_DIR = pathlib.Path(__file__).parent.parent.parent / "reports" / "coverage"
 
 
 def _engine_slug(label: str) -> str:
