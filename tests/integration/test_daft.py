@@ -15,7 +15,7 @@ pytest.importorskip("deltalake", reason="requires lakebench[daft] extra")
 
 def _engine(tmp_path, name):
     from lakebench.engines import Daft
-    return Daft(schema_or_working_directory_uri=to_file_uri(str(tmp_path / name)))
+    return Daft(schema_or_working_directory_uri=str(tmp_path / name))
 
 
 @pytest.mark.integration
