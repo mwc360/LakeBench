@@ -480,6 +480,19 @@ wheels = [
 ]
 
 [[package]]
+name = "delta-spark"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "importlib-metadata", marker = "python_full_version >= '3.9'" },
+    { name = "pyspark", version = "3.5.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/06/a64cc4e17fe959cf60dc126bf3283fc9f22fc91f000b7f3f5e465338022d/delta-spark-3.2.0.tar.gz", hash = "sha256:641967828e47c64805f8c746513da80bea24b5f19b069cdcf64561cd3692e11d", size = 22147, upload-time = "2024-05-09T17:26:10.754Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/8e/bb778f5049aa371bf80a7a781b237eb10ef104f8736fe00d25fcfee80c2b/delta_spark-3.2.0-py3-none-any.whl", hash = "sha256:c4ff3fa7218e58a702cb71eb64384b0005c4d6f0bbdd0fe0b38a53564d946e09", size = 21186, upload-time = "2024-05-09T17:26:09.544Z" },
+]
+
+[[package]]
 name = "deltalake"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -711,6 +724,18 @@ wheels = [
 ]
 
 [[package]]
+name = "importlib-metadata"
+version = "8.7.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "zipp", marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f3/49/3b30cad09e7771a4982d9975a8cbf64f00d4a1ececb53297f1d9a7be1b10/importlib_metadata-8.7.1.tar.gz", hash = "sha256:49fef1ae6440c182052f407c8d34a68f72efc36db9ca90dc0113398f2fdde8bb", size = 57107, upload-time = "2025-12-21T10:00:19.278Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/5e/f8e9a1d23b9c20a551a8a02ea3637b4642e22c2626e3a13a9a29cdea99eb/importlib_metadata-8.7.1-py3-none-any.whl", hash = "sha256:5a1f80bf1daa489495071efbb095d75a634cf28a8bc299581244063b53176151", size = 27865, upload-time = "2025-12-21T10:00:18.329Z" },
+]
+
+[[package]]
 name = "iniconfig"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -786,6 +811,7 @@ sail = [
     { name = "pyspark", version = "4.1.1", source = { registry = "https://pypi.org/simple" }, extra = ["connect"], marker = "(python_full_version >= '3.10' and extra == 'extra-9-lakebench-sail') or (extra == 'extra-9-lakebench-sail' and extra == 'extra-9-lakebench-spark')" },
 ]
 spark = [
+    { name = "delta-spark", marker = "python_full_version >= '3.9'" },
     { name = "pyarrow", marker = "python_full_version >= '3.9'" },
     { name = "pyspark", version = "3.5.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
@@ -812,6 +838,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "daft", marker = "python_full_version >= '3.10' and extra == 'daft'", specifier = "==0.7.3" },
+    { name = "delta-spark", marker = "python_full_version >= '3.9' and extra == 'spark'", specifier = ">=3.2.0,<4.0.0" },
     { name = "deltalake", marker = "python_full_version >= '3.9' and extra == 'sail'", specifier = ">=1.2.1" },
     { name = "deltalake", marker = "python_full_version >= '3.10' and extra == 'daft'", specifier = "==1.3.3" },
     { name = "deltalake", marker = "python_full_version >= '3.10' and extra == 'duckdb'", specifier = "==1.3.3" },
@@ -1914,6 +1941,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/09/69/ffd41e6149ac4bd9700552659842383f44eb96f00e03c2db433bc856bf2f/wrapt-2.1.1-cp39-cp39-win_amd64.whl", hash = "sha256:e75ad48c3cca739f580b5e14c052993eb644c7fa5b4c90aa51193280b30875ae", size = 60222, upload-time = "2026-02-03T02:12:37.727Z" },
     { url = "https://files.pythonhosted.org/packages/59/f0/1889e68a0d389d2552b9e014ed6471addcfab98f09611bac61a8d8fab223/wrapt-2.1.1-cp39-cp39-win_arm64.whl", hash = "sha256:9ccd657873b7f964711447d004563a2bc08d1476d7a1afcad310f3713e6f50f4", size = 58647, upload-time = "2026-02-03T02:11:11.236Z" },
     { url = "https://files.pythonhosted.org/packages/c4/da/5a086bf4c22a41995312db104ec2ffeee2cf6accca9faaee5315c790377d/wrapt-2.1.1-py3-none-any.whl", hash = "sha256:3b0f4629eb954394a3d7c7a1c8cca25f0b07cefe6aa8545e862e9778152de5b7", size = 43886, upload-time = "2026-02-03T02:11:45.048Z" },
+]
+
+[[package]]
+name = "zipp"
+version = "3.23.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50ede074e376733dca2ae7c6eb617489437771209d4180/zipp-3.23.0.tar.gz", hash = "sha256:a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166", size = 25547, upload-time = "2025-06-08T17:06:39.4Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276, upload-time = "2025-06-08T17:06:38.034Z" },
 ]
 
 [[package]]
