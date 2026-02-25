@@ -11,6 +11,8 @@ from ...engines.sail import Sail
 from .engine_impl.spark import SparkClickBench
 from .engine_impl.duckdb import DuckDBClickBench
 from .engine_impl.sail import SailClickBench
+from .engine_impl.polars import PolarsClickBench
+from .engine_impl.daft import DaftClickBench
 
 class ClickBench(_LoadAndQuery):
     """
@@ -54,7 +56,9 @@ class ClickBench(_LoadAndQuery):
     BENCHMARK_IMPL_REGISTRY = {
         Spark: SparkClickBench,
         DuckDB: DuckDBClickBench,
-        Sail: SparkClickBench
+        Sail: SailClickBench,
+        Polars: PolarsClickBench,
+        Daft: DaftClickBench,
     }
     BENCHMARK_NAME = 'ClickBench'
     TABLE_REGISTRY = [

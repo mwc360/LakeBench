@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 from ..base import BaseBenchmark
 from ...utils.query_utils import transpile_and_qualify_query, get_table_name_from_ddl
