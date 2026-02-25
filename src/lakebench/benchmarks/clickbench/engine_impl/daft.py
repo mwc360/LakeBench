@@ -12,7 +12,7 @@ class DaftClickBench:
     def load_parquet_to_delta(self, parquet_folder_uri: str, table_name: str,
                               table_is_precreated: bool = False, context_decorator: str = None):
         daft = self.engine.daft
-        df = daft.read_parquet(posixpath.join(parquet_folder_uri, '*.parquet'))
+        df = daft.read_parquet(parquet_folder_uri)
 
         # Binary columns → string (ClickBench parquet omits logical string type on some columns)
         binary_cols = [f.name for f in df.schema() if f.dtype == daft.DataType.binary()]
