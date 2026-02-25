@@ -19,33 +19,53 @@ Tests are marked `@pytest.mark.integration` and are **not** collected by default
 ### DuckDB
 ```bash
 uv sync --group dev --extra duckdb --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_duckdb.py -v -s
+uv run pytest tests/integration/test_duckdb.py -v -s
 ```
 
 ### Daft
 ```bash
 uv sync --group dev --extra daft --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_daft.py -v -s
+uv run pytest tests/integration/test_daft.py -v -s
 ```
 
 ### Polars
 ```bash
 uv sync --group dev --extra polars --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_polars.py -v -s
+uv run pytest tests/integration/test_polars.py -v -s
 ```
 
 ### Spark
 > `spark` and `sail` extras are mutually exclusive — use a separate venv if you need both.
 ```bash
 uv sync --group dev --extra spark --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_spark.py -v -s
+uv run pytest tests/integration/test_spark.py -v -s
 ```
 
 ### Sail
 ```bash
 uv sync --group dev --extra sail --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_sail.py -v -s
+uv run pytest tests/integration/test_sail.py -v -s
 ```
+
+---
+
+## Running a single benchmark for an engine
+
+Each test module has one function per benchmark named `test_<benchmark>_<engine>`.  
+Pass it after `::` to run only that scenario:
+
+```bash
+# TPC-H only for DuckDB
+uv run pytest tests/integration/test_duckdb.py::test_tpch_duckdb -v -s
+
+# ELTBench only for Spark
+uv run pytest tests/integration/test_spark.py::test_eltbench_spark -v -s
+
+# ClickBench only for Polars
+uv run pytest tests/integration/test_polars.py::test_clickbench_polars -v -s
+```
+
+Available test names per engine follow the pattern `test_{tpch,tpcds,clickbench,eltbench}_{engine}`.
 
 ---
 
@@ -56,9 +76,9 @@ DuckDB, Daft, and Polars share no conflicts and can run in one sync:
 ```bash
 uv sync --group dev --extra duckdb --extra daft --extra polars \
         --extra tpch_datagen --extra tpcds_datagen
-uv run pytest tests/integration/test_tpc_duckdb.py \
-              tests/integration/test_tpc_daft.py \
-              tests/integration/test_tpc_polars.py -v -s
+uv run pytest tests/integration/test_duckdb.py \
+              tests/integration/test_daft.py \
+              tests/integration/test_polars.py -v -s
 ```
 
 ---
