@@ -57,7 +57,7 @@ class Polars(BaseEngine):
                         if str(dtype).startswith("Decimal")]
         if decimal_cols:
             table_df = table_df.with_columns(
-                [self.pl.col(c).cast(self.pl.Float64) for c in decimal_cols]
+                [self.pl.col(c).cast(self.pl.Float64, strict=False) for c in decimal_cols]
             )
         table_df.collect(engine='streaming').write_delta(
             posixpath.join(self.schema_or_working_directory_uri, table_name), 
