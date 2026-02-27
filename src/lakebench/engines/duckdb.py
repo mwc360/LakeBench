@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .base import BaseEngine
 from  .delta_rs import DeltaRs
 
@@ -87,7 +88,7 @@ class DuckDB(BaseEngine):
         """
         Execute a SQL query using DuckDB.
         """
-        result = self.duckdb.sql(query).df()
+        result = self.duckdb.sql(query).arrow()
 
     def optimize_table(self, table_name: str):
         fact_table = self.deltars.DeltaTable(

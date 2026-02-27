@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .base import BaseEngine
 from .delta_rs import DeltaRs
 
@@ -49,6 +50,15 @@ class Polars(BaseEngine):
             posixpath.join(parquet_folder_uri, '*.parquet'), 
             storage_options=self.storage_options
         )
+        # Cast any Decimal columns to Float64 before collecting — TPC-DS datagen can
+        # produce values that exceed the column's declared precision at small scale factors,
+        # causing a Rust-level panic in Polars strict decimal enforcement.
+        decimal_cols = [name for name, dtype in table_df.schema.items()
+                        if str(dtype).startswith("Decimal")]
+        if decimal_cols:
+            table_df = table_df.with_columns(
+                [self.pl.col(c).cast(self.pl.Float64, strict=False) for c in decimal_cols]
+            )
         table_df.collect(engine='streaming').write_delta(
             posixpath.join(self.schema_or_working_directory_uri, table_name), 
             mode="overwrite", 

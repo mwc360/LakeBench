@@ -130,7 +130,7 @@ class DuckDBELTBench:
             .execute()
 
     def query_total_sales_fact(self):
-        df = self.engine.duckdb.sql(f"""
+        self.engine.duckdb.sql(f"""
             select sum(total_net_profit), year(sale_date) 
             from delta_scan('{posixpath.join(self.engine.schema_or_working_directory_uri, 'total_sales_fact')}') group by year(sale_date)
-        """).df()
+        """).arrow()

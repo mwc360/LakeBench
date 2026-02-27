@@ -5,6 +5,9 @@ __pycache__/
 *.pyd
 *.so
 
+# Development artifacts
+dev/
+
 # Virtual environment
 .venv/
 env/
@@ -33,6 +36,10 @@ build/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Spark metastore (Derby embedded DB)
+metastore_db/
+derby.log
 
 # Logs
 *.log

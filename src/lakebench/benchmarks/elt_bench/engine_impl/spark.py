@@ -9,7 +9,7 @@ class SparkELTBench:
 
     def create_total_sales_fact(self):
         self.engine.spark.sql("""
-            CREATE OR REPLACE TABLE total_sales_fact USING DELTA AS
+            CREATE TABLE total_sales_fact USING DELTA AS
             SELECT 
                 s.s_store_id,
                 i.i_item_id,
@@ -70,36 +70,23 @@ class SparkELTBench:
               ON ss.ss_customer_sk = c.c_customer_sk
             """)
 
-        # Register as a temporary view for SQL-based merge
-        sampled_fact_data.createOrReplaceTempView("sampled_fact_data")
-
-        self.engine.spark.sql("""
-            MERGE INTO total_sales_fact AS target
-            USING (
-                SELECT 
-                    s_store_id, 
-                    i_item_id, 
-                    c_customer_id, 
-                    sale_date, 
-                    total_quantity, 
-                    total_net_paid, 
-                    total_net_profit
-                FROM sampled_fact_data
-            ) AS source
-            ON 
-                target.s_store_id = source.s_store_id AND 
-                target.i_item_id = source.i_item_id AND 
-                target.c_customer_id = source.c_customer_id AND 
-                target.sale_date = source.sale_date
-            WHEN MATCHED THEN 
-                UPDATE SET 
-                    target.total_quantity = target.total_quantity + source.total_quantity,
-                    target.total_net_paid = target.total_net_paid + source.total_net_paid,
-                    target.total_net_profit = target.total_net_profit + source.total_net_profit
-            WHEN NOT MATCHED THEN 
-                INSERT (s_store_id, i_item_id, c_customer_id, sale_date, total_quantity, total_net_paid, total_net_profit)
-                VALUES (source.s_store_id, source.i_item_id, source.c_customer_id, source.sale_date, source.total_quantity, source.total_net_paid, source.total_net_profit);
-        """)
+        # Use the Delta Python API instead of SQL MERGEto work around a local delta-spark
+        # bug (DELTA_MERGE_RESOLVED_ATTRIBUTE_MISSING_FROM_INPUT) where the SQL planner
+        # fails to resolve target table attributes when source and target share column names.
+        # Cloud runtimes (Databricks, Fabric, Synapse) use return this error.
+        from delta.tables import DeltaTable
+        delta_table = DeltaTable.forName(self.engine.spark, "total_sales_fact")
+        delta_table.alias("target").merge(
+            sampled_fact_data.alias("source"),
+            "target.s_store_id = source.s_store_id AND "
+            "target.i_item_id = source.i_item_id AND "
+            "target.c_customer_id = source.c_customer_id AND "
+            "target.sale_date = source.sale_date"
+        ).whenMatchedUpdate(set={
+            "total_quantity":   "target.total_quantity + source.total_quantity",
+            "total_net_paid":   "target.total_net_paid + source.total_net_paid",
+            "total_net_profit": "target.total_net_profit + source.total_net_profit",
+        }).whenNotMatchedInsertAll().execute()
         
     def query_total_sales_fact(self):
         df = self.engine.spark.sql(f"""

@@ -1,7 +1,9 @@
 from .base import BaseEngine
 from .delta_rs import DeltaRs
+from ..utils.path_utils import to_file_uri, _REMOTE_SCHEMES
 
 import os
+import pathlib
 import posixpath
 from importlib.metadata import version
 from typing import Any, Optional
@@ -55,18 +57,37 @@ class Daft(BaseEngine):
         table_df = self.daft.read_parquet(
             posixpath.join(parquet_folder_uri)
         )
+        raw_path = posixpath.join(self.schema_or_working_directory_uri, table_name)
+        is_local = not any(raw_path.startswith(s) for s in _REMOTE_SCHEMES)
+        # Daft 0.7.x requires the target directory to exist for local paths
+        if is_local:
+            pathlib.Path(raw_path).mkdir(parents=True, exist_ok=True)
+        table_uri = to_file_uri(raw_path)
         table_df.write_deltalake(
-            table=posixpath.join(self.schema_or_working_directory_uri, table_name),
+            table=table_uri,
             mode="overwrite",
-        ) 
+        )
 
     def register_table(self, table_name: str):
         """
         Register a Delta table DataFrame in Daft.
+
+        On local paths, Daft 0.7.x has a Windows path-handling bug in its object
+        store that corrupts drive-letter paths (``C:/...`` → ``/C:/...``) when
+        reading parquet files referenced by the Delta log.  Workaround: use
+        delta-rs to resolve the current snapshot's file URIs, then scan via
+        ``read_parquet`` which handles Windows paths correctly.
         """
-        globals()[table_name] = self.daft.read_deltalake(
-            posixpath.join(self.schema_or_working_directory_uri, table_name)
-        )
+        table_path = posixpath.join(self.schema_or_working_directory_uri, table_name)
+        is_local = not any(table_path.startswith(s) for s in _REMOTE_SCHEMES)
+        if is_local:
+            from deltalake import DeltaTable
+            file_uris = DeltaTable(table_path).file_uris()
+            globals()[table_name] = self.daft.read_parquet(file_uris)
+        else:
+            globals()[table_name] = self.daft.read_deltalake(
+                to_file_uri(table_path)
+            )
 
     def execute_sql_query(self, query: str, context_decorator: Optional[str] = None):
         """
