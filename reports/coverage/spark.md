@@ -5,6 +5,24 @@ _Last updated: 2026-02-25 00:19:13 UTC_
 
 ---
 
+## TPC-H
+
+✅ **22/22 queries passed (100.0%)**
+
+---
+
+## TPC-DS
+
+✅ **103/103 queries passed (100.0%)**
+
+---
+
+## ClickBench
+
+✅ **43/43 queries passed (100.0%)**
+
+---
+
 ## ELTBench
 
 ✅ **12/12 tasks passed (100.0%)**
