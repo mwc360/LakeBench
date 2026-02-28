@@ -32,6 +32,8 @@
                 uv pip install "lakebench[$extra]" 2>&1 || echo "warning: $extra failed to install, skipping"
               done
               uv pip install --group dev
+              uv pip install jupyter ipykernel
+              python -m ipykernel install --user --name python3 --display-name "Python 3 (LakeBench)"
 
               # store hash to detect pyproject.toml changes
               md5sum pyproject.toml > .venv/.pyproject.hash
